@@ -1,34 +1,67 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Res } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { SignInUserDto } from './dto/sign-in.dto';
+import { Response } from 'express';
+import { UsersRoles } from 'src/common/enum';
 
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post('admin')
+  @ApiOperation({ summary: 'Create a new admin user' })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({ status: 201, description: 'Admin user successfully created' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  async createAdmin(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.createUserByRole(createUserDto, UsersRoles.ADMIN);
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @Post('merchant')
+  @ApiOperation({ summary: 'Create a new merchant user' })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Merchant user successfully created',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  async createMerchant(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.createUserByRole(
+      createUserDto,
+      UsersRoles.MERCHANT,
+    );
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @Post('signin')
+  @ApiOperation({ summary: 'Sign in a user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User signed in successfully',
+    schema: {
+      example: {
+        message: 'Login successful',
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid phone number or password',
+    schema: {
+      example: {
+        message: 'Invalid credentials',
+        error: 'Unauthorized',
+        statusCode: 401,
+      },
+    },
+  })
+  async signInUser(
+    @Body() signInUserDto: SignInUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.usersService.signInUser(signInUserDto, res);
   }
 }

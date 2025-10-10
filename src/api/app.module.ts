@@ -17,6 +17,7 @@ import { MerchantsModule } from './merchants/merchants.module';
 import { ProductVariantsModule } from './product_variants/product_variants.module';
 import { ProductVariantsAttributesModule } from './product_variants_attributes/product_variants_attributes.module';
 import config from 'src/config';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import config from 'src/config';
       autoLoadEntities: true,
       entities: ['dist/core/entity/*.entity{.ts,.js}'],
     }),
+    JwtModule.register({ global: true }),
     CategoriesModule,
     UsersModule,
     ProductsModule,
