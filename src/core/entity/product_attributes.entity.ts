@@ -2,6 +2,7 @@ import { BaseEntity } from 'src/common/database/baseEntity';
 import { AttributeTypes } from 'src/common/enum';
 import { Column, Entity, OneToMany } from 'typeorm';
 import { ProductAttributeValuesEntity } from './product_attribute_values.entity';
+import { ProductVariantAttributesEntity } from './product_variant_attributes.entity';
 
 @Entity('product_attributes')
 export class ProductAttributesEntity extends BaseEntity {
@@ -20,5 +21,11 @@ export class ProductAttributesEntity extends BaseEntity {
     () => ProductAttributeValuesEntity,
     (productAttributeValues) => productAttributeValues.product_attribute,
   )
-  productAttributeValues: ProductAttributeValuesEntity[];
+  product_attribute_values: ProductAttributeValuesEntity[];
+
+  @OneToMany(
+    () => ProductVariantAttributesEntity,
+    (productVariantAttribute) => productVariantAttribute.product_attribute,
+  )
+  product_variant_attributes: ProductVariantAttributesEntity[];
 }

@@ -4,6 +4,9 @@ import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
 import { MerchantsEntity } from './merchants.entity';
 import { AddressesEntity } from './addresses.entity';
 import { CartEntity } from './cart.entity';
+import { OrdersEntity } from './orders.entity';
+import { FavoritesEntity } from './favorites.entity';
+import { ReviewsEntity } from './reviews.entity';
 
 @Entity('users')
 export class UsersEntity extends BaseEntity {
@@ -43,4 +46,13 @@ export class UsersEntity extends BaseEntity {
 
   @OneToOne(() => CartEntity, (cart) => cart.customer)
   cart: CartEntity;
+
+  @OneToMany(() => OrdersEntity, (order) => order.customer)
+  orders: OrdersEntity[];
+
+  @OneToMany(() => FavoritesEntity, (favorite) => favorite.customer)
+  favorites: FavoritesEntity[];
+
+  @OneToMany(() => ReviewsEntity, (review) => review.customer)
+  reviews: ReviewsEntity[];
 }

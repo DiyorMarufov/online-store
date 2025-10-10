@@ -1,6 +1,10 @@
 import { BaseEntity } from 'src/common/database/baseEntity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { ProductsEntity } from './products.entity';
+import { OrderItemsEntity } from './order_items.entity';
+import { MerchantProductsEntity } from './merchant_products.entity';
+import { CartItemsEntity } from './cart_items.entity';
+import { ProductVariantAttributesEntity } from './product_variant_attributes.entity';
 
 @Entity('product_variants')
 export class ProductVariantsEntity extends BaseEntity {
@@ -28,4 +32,22 @@ export class ProductVariantsEntity extends BaseEntity {
 
   @Column({ type: 'varchar', name: 'image' })
   image: string;
+
+  @OneToMany(() => OrderItemsEntity, (orderItem) => orderItem.product_variant)
+  order_items: OrderItemsEntity[];
+
+  @OneToMany(
+    () => MerchantProductsEntity,
+    (merchantProduct) => merchantProduct.product_variant,
+  )
+  merchant_products: MerchantProductsEntity[];
+
+  @OneToMany(() => CartItemsEntity, (cartItem) => cartItem.product_variant)
+  cart_items: CartItemsEntity[];
+
+  @OneToMany(
+    () => ProductVariantAttributesEntity,
+    (productVariantAttribute) => productVariantAttribute.product_variant,
+  )
+  product_variant_attributes: ProductVariantAttributesEntity[];
 }

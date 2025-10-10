@@ -18,3 +18,10 @@ export enum AttributeTypes {
   BOOLEAN = 'boolean',
   SELECT = 'select',
 }
+
+export enum OrderStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  DELIVERED = 'delivered',
+  CANCELLED = 'cancelled',
+}

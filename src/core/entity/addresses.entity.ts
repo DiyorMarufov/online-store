@@ -1,6 +1,7 @@
 import { BaseEntity } from 'src/common/database/baseEntity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { UsersEntity } from './users.entity';
+import { OrdersEntity } from './orders.entity';
 
 @Entity('addresses')
 export class AddressesEntity extends BaseEntity {
@@ -22,4 +23,7 @@ export class AddressesEntity extends BaseEntity {
 
   @Column({ type: 'boolean', name: 'is_default', default: true })
   is_default: boolean;
+
+  @OneToMany(() => OrdersEntity, (order) => order.address)
+  orders: OrdersEntity[];
 }

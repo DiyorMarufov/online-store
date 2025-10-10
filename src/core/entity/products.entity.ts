@@ -3,6 +3,8 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { CategoriesEntity } from './categories.entity';
 import { Status } from 'src/common/enum';
 import { ProductVariantsEntity } from './product_variants.entity';
+import { FavoritesEntity } from './favorites.entity';
+import { ReviewsEntity } from './reviews.entity';
 
 @Entity('products')
 export class ProductsEntity extends BaseEntity {
@@ -35,4 +37,10 @@ export class ProductsEntity extends BaseEntity {
     (productVariant) => productVariant.product,
   )
   product_variants: ProductVariantsEntity[];
+
+  @OneToMany(() => FavoritesEntity, (favorite) => favorite.product)
+  favorites: FavoritesEntity[];
+
+  @OneToMany(() => ReviewsEntity, (review) => review.product)
+  reviews: ReviewsEntity[];
 }
