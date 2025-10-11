@@ -49,7 +49,9 @@ export class ProductVariantsService {
 
   async findAll() {
     try {
-      const allProductVariants = await this.productVariantRepo.find();
+      const allProductVariants = await this.productVariantRepo.find({
+        relations: ['product'],
+      });
       return successRes(allProductVariants);
     } catch (error) {
       return errorCatch(error);

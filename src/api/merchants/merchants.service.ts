@@ -30,8 +30,9 @@ export class MerchantsService {
       }
 
       const newMerchant = this.merchantRepo.create(createMerchantDto);
-
+      await this.merchantRepo.save(newMerchant);
       return successRes({
+        id: newMerchant.id,
         store_name: newMerchant.store_name,
         store_logo: newMerchant.store_logo,
         store_description: newMerchant.store_description,

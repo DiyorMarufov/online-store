@@ -6,7 +6,7 @@ import { ProductVariantAttributesEntity } from './product_variant_attributes.ent
 
 @Entity('product_attributes')
 export class ProductAttributesEntity extends BaseEntity {
-  @Column({ type: 'varchar', name: 'name' })
+  @Column({ type: 'varchar', name: 'name', unique: true })
   name: string;
 
   @Column({

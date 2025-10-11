@@ -9,6 +9,9 @@ import { ProductsModule } from './products/products.module';
 import { ProductVariantsModule } from './product_variants/product_variants.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { MerchantProductsModule } from './merchant_products/merchant_products.module';
+import { ProductAttributesModule } from './product_attributes/product_attributes.module';
+import { ProductAttributeValuesModule } from './product_attribute_values/product_attribute_values.module';
+import { ProductVariantsAttributesModule } from './product_variants_attributes/product_variants_attributes.module';
 
 export default class Application {
   public static async main(): Promise<void> {
@@ -46,6 +49,9 @@ export default class Application {
         ProductVariantsModule,
         MerchantsModule,
         MerchantProductsModule,
+        ProductAttributesModule,
+        ProductAttributeValuesModule,
+        ProductVariantsAttributesModule,
       ],
     });
     SwaggerModule.setup('api', app, document, {
