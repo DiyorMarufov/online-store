@@ -1,9 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ProductVariantsService } from './product_variants.service';
 import { ProductVariantsController } from './product_variants.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
+import { ProductsEntity } from 'src/core/entity/products.entity';
+import { TokenService } from 'src/infrastructure/jwt';
 
 @Module({
+  imports: [TypeOrmModule.forFeature([ProductVariantsEntity, ProductsEntity])],
   controllers: [ProductVariantsController],
-  providers: [ProductVariantsService],
+  providers: [ProductVariantsService, TokenService],
 })
 export class ProductVariantsModule {}

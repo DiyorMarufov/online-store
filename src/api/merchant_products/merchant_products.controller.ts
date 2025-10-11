@@ -17,18 +17,4 @@ export class MerchantProductsController {
     return this.merchantProductsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.merchantProductsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMerchantProductDto: UpdateMerchantProductDto) {
-    return this.merchantProductsService.update(+id, updateMerchantProductDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.merchantProductsService.remove(+id);
-  }
 }

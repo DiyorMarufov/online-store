@@ -1,18 +1,30 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { checkRoles } from 'src/common/decorator/role.decorator';
+import { AuthGuard } from 'src/common/guard/auth.guard';
+import { RolesGuard } from 'src/common/guard/roles.guard';
+import { UsersRoles } from 'src/common/enum';
 
 @ApiTags('Categories')
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
   @Post()
-  @ApiOperation({ summary: 'Create a new category' })
+  @ApiOperation({ summary: 'Create a new category (Only Superadmin or Admin)' })
   @ApiResponse({
     status: 201,
-    description: 'Category successfully created',
+    description: 'Category created successfully',
     schema: {
       example: {
         success: true,
@@ -26,18 +38,57 @@ export class CategoriesController {
     },
   })
   @ApiResponse({
+    status: 400,
+    description: 'Validation failed',
+    schema: {
+      example: {
+        success: false,
+        statusCode: 400,
+        message: 'name should not be empty',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Token is missing or invalid',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Only Superadmin or Admin can access this endpoint',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Forbidden user with role USER',
+      },
+    },
+  })
+  @ApiResponse({
     status: 409,
-    description: 'Category with this name already exists',
+    description: 'Conflict - Category with this name already exists',
+    schema: {
+      example: {
+        success: false,
+        statusCode: 409,
+        message: 'Category with this name already exists',
+      },
+    },
   })
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoriesService.create(createCategoryDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all categories' })
+  @ApiOperation({ summary: 'Get all categories (Public)' })
   @ApiResponse({
     status: 200,
-    description: 'List of all categories',
+    description: 'Returns the list of all categories',
     schema: {
       example: {
         success: true,

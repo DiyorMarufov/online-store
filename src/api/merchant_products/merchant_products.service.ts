@@ -11,16 +11,4 @@ export class MerchantProductsService {
   findAll() {
     return `This action returns all merchantProducts`;
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} merchantProduct`;
-  }
-
-  update(id: number, updateMerchantProductDto: UpdateMerchantProductDto) {
-    return `This action updates a #${id} merchantProduct`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} merchantProduct`;
-  }
 }
