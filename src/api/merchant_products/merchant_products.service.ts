@@ -1,69 +1,76 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateMerchantProductDto } from './dto/create-merchant_product.dto';
-import { UpdateMerchantProductDto } from './dto/update-merchant_product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MerchantProductsRepo } from 'src/core/repo/merchant_products.repo';
 import { MerchantProductsEntity } from 'src/core/entity/merchant_products.entity';
 import { MerchantsEntity } from 'src/core/entity/merchants.entity';
-import { MerchantsRepo } from 'src/core/repo/merchants.repo';
 import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
-import { ProductVariantsRepo } from 'src/core/repo/product_variants.repo';
 import { errorCatch } from 'src/infrastructure/exception';
 import { successRes } from 'src/infrastructure/successResponse';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class MerchantProductsService {
   constructor(
     @InjectRepository(MerchantProductsEntity)
     private readonly merchantProductRepo: MerchantProductsRepo,
-    @InjectRepository(MerchantsEntity)
-    private readonly merchantRepo: MerchantsRepo,
-    @InjectRepository(ProductVariantsEntity)
-    private readonly productVariantRepo: ProductVariantsRepo,
+    private readonly dataSource: DataSource,
   ) {}
   async create(createMerchantProductDto: CreateMerchantProductDto) {
-    try {
-      const { merchant_id, product_variant_id } = createMerchantProductDto;
-      const existsMerchant = await this.merchantRepo.findOne({
+    const { merchant_id, product_variant_id, stock, price, is_active } =
+      createMerchantProductDto;
+
+    return await this.dataSource.transaction(async (manager) => {
+      const existsMerchant = await manager.findOne(MerchantsEntity, {
         where: { id: merchant_id },
       });
-
-      if (!existsMerchant) {
+      if (!existsMerchant)
         throw new NotFoundException(
           `Merchant with ID ${merchant_id} not found`,
         );
-      }
 
-      const existsProductVariant = await this.productVariantRepo.findOne({
-        where: { id: product_variant_id },
-      });
-
-      if (!existsProductVariant) {
+      const existsProductVariant = await manager.findOne(
+        ProductVariantsEntity,
+        {
+          where: { id: product_variant_id },
+          lock: { mode: 'pessimistic_write' },
+        },
+      );
+      if (!existsProductVariant)
         throw new NotFoundException(
           `Product variant with ID ${product_variant_id} not found`,
         );
+
+      if (stock > existsProductVariant.stock) {
+        throw new BadRequestException(
+          'Merchant stock cannot exceed main product stock',
+        );
       }
 
-      const newMerchantProduct = this.merchantProductRepo.create({
-        ...createMerchantProductDto,
+      existsProductVariant.stock -= stock;
+      await manager.save(existsProductVariant);
+
+      const newMerchantProduct = manager.create(MerchantProductsEntity, {
         merchant: existsMerchant,
         product_variant: existsProductVariant,
+        stock,
+        price,
+        is_active,
       });
-      await this.merchantProductRepo.save(newMerchantProduct);
+      await manager.save(newMerchantProduct);
 
-      return successRes(
-        {
-          merchant_id: newMerchantProduct.merchant.id,
-          product_variant_id: newMerchantProduct.product_variant.id,
-          price: newMerchantProduct.price,
-          stock: newMerchantProduct.stock,
-          is_active: newMerchantProduct.is_active,
-        },
-        201,
-      );
-    } catch (error) {
-      return errorCatch(error);
-    }
+      return {
+        merchant_id: newMerchantProduct.merchant.id,
+        product_variant_id: newMerchantProduct.product_variant.id,
+        price: newMerchantProduct.price,
+        stock: newMerchantProduct.stock,
+        is_active: newMerchantProduct.is_active,
+      };
+    });
   }
 
   async findAll() {

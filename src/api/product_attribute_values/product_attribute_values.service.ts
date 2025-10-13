@@ -50,9 +50,7 @@ export class ProductAttributeValuesService {
   async findAll() {
     try {
       const allProductAttributeValues =
-        await this.productAttributeValueRepo.find({
-          relations: ['product_attribute'],
-        });
+        await this.productAttributeValueRepo.find();
 
       return successRes(allProductAttributeValues);
     } catch (error) {

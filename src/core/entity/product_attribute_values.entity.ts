@@ -1,5 +1,5 @@
 import { BaseEntity } from 'src/common/database/baseEntity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 import { ProductAttributesEntity } from './product_attributes.entity';
 import { ProductVariantAttributesEntity } from './product_variant_attributes.entity';
 
@@ -19,9 +19,9 @@ export class ProductAttributeValuesEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'value' })
   value: string;
 
-  @OneToMany(
+  @ManyToMany(
     () => ProductVariantAttributesEntity,
-    (productVariantAttribute) => productVariantAttribute.product_value,
+    (attr) => attr.product_values,
   )
   product_variant_attributes: ProductVariantAttributesEntity[];
 }

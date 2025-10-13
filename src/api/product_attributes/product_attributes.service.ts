@@ -43,7 +43,9 @@ export class ProductAttributesService {
 
   async findAll() {
     try {
-      const allProductAttributes = await this.productAttribute.find();
+      const allProductAttributes = await this.productAttribute.find({
+        relations: ['product_attribute_values'],
+      });
       return successRes(allProductAttributes);
     } catch (error) {
       return errorCatch(error);

@@ -1,13 +1,25 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { MerchantsService } from './merchants.service';
 import { CreateMerchantDto } from './dto/create-merchant.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { checkRoles } from 'src/common/decorator/role.decorator';
+import { UsersRoles } from 'src/common/enum';
+import { AuthGuard } from 'src/common/guard/auth.guard';
+import { RolesGuard } from 'src/common/guard/roles.guard';
 
 @ApiTags('Merchants') // Swagger'da guruh nomi
 @Controller('merchants')
 export class MerchantsController {
   constructor(private readonly merchantsService: MerchantsService) {}
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
   @Post()
   @ApiOperation({ summary: 'Create a new merchant' })
   @ApiResponse({
@@ -34,5 +46,12 @@ export class MerchantsController {
   })
   create(@Body() createMerchantDto: CreateMerchantDto) {
     return this.merchantsService.create(createMerchantDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all merchants' })
+  @ApiResponse({ status: 200, description: 'List of all merchants' })
+  findAll() {
+    return this.merchantsService.findAll();
   }
 }

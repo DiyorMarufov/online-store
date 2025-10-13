@@ -27,11 +27,14 @@ export class ProductVariantsEntity extends BaseEntity {
   })
   price: number;
 
-  @Column({ type: 'int', name: 'stock' })
+  @Column({ type: 'int', name: 'stock', unsigned: true })
   stock: number;
 
   @Column({ type: 'varchar', name: 'image' })
   image: string;
+
+  @Column({ type: 'varchar', name: 'slug', unique: true, nullable: true })
+  slug: string;
 
   @OneToMany(() => OrderItemsEntity, (orderItem) => orderItem.product_variant)
   order_items: OrderItemsEntity[];

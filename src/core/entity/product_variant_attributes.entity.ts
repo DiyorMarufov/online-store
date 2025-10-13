@@ -1,5 +1,5 @@
 import { BaseEntity } from 'src/common/database/baseEntity';
-import { Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne } from 'typeorm';
 import { ProductVariantsEntity } from './product_variants.entity';
 import { ProductAttributesEntity } from './product_attributes.entity';
 import { ProductAttributeValuesEntity } from './product_attribute_values.entity';
@@ -28,14 +28,17 @@ export class ProductVariantAttributesEntity extends BaseEntity {
   @JoinColumn({ name: 'attribute_id', referencedColumnName: 'id' })
   product_attribute: ProductAttributesEntity;
 
-  @ManyToOne(
+  @ManyToMany(
     () => ProductAttributeValuesEntity,
-    (productAttributeValue) => productAttributeValue.product_variant_attributes,
+    (value) => value.product_variant_attributes,
     {
-      onDelete: 'CASCADE',
-      onUpdate: 'CASCADE',
+      cascade: true,
     },
   )
-  @JoinColumn({ name: 'value_id', referencedColumnName: 'id' })
-  product_value: ProductAttributeValuesEntity;
+  @JoinTable({
+    name: 'product_variant_attribute_values', // or any name you prefer
+    joinColumn: { name: 'product_variant_attribute_id' },
+    inverseJoinColumn: { name: 'value_id' },
+  })
+  product_values: ProductAttributeValuesEntity[];
 }
