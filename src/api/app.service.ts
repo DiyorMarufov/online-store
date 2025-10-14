@@ -12,6 +12,9 @@ import { MerchantProductsModule } from './merchant_products/merchant_products.mo
 import { ProductAttributesModule } from './product_attributes/product_attributes.module';
 import { ProductAttributeValuesModule } from './product_attribute_values/product_attribute_values.module';
 import { ProductVariantsAttributesModule } from './product_variants_attributes/product_variants_attributes.module';
+import { FavoritesModule } from './favorites/favorites.module';
+import { CartModule } from './cart/cart.module';
+import { CartItemsModule } from './cart_items/cart_items.module';
 
 export default class Application {
   public static async main(): Promise<void> {
@@ -52,6 +55,9 @@ export default class Application {
         ProductAttributesModule,
         ProductAttributeValuesModule,
         ProductVariantsAttributesModule,
+        FavoritesModule,
+        CartModule,
+        CartItemsModule,
       ],
     });
     SwaggerModule.setup('api', app, document, {

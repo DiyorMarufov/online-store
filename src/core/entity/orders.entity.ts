@@ -1,9 +1,17 @@
 import { BaseEntity } from 'src/common/database/baseEntity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 import { UsersEntity } from './users.entity';
 import { AddressesEntity } from './addresses.entity';
 import { OrderStatus } from 'src/common/enum';
 import { OrderItemsEntity } from './order_items.entity';
+import { PaymentEntity } from './payment.entity';
 
 @Entity('orders')
 export class OrdersEntity extends BaseEntity {
@@ -43,4 +51,7 @@ export class OrdersEntity extends BaseEntity {
 
   @OneToMany(() => OrderItemsEntity, (orderItem) => orderItem.order)
   order_items: OrderItemsEntity[];
+
+  @OneToOne(() => PaymentEntity, (payment) => payment.order)
+  payment: PaymentEntity;
 }

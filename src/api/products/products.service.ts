@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductsEntity } from 'src/core/entity/products.entity';
 import { ProductsRepo } from 'src/core/repo/products.repo';
@@ -8,6 +7,7 @@ import { errorCatch } from 'src/infrastructure/exception';
 import { CategoriesEntity } from 'src/core/entity/categories.entity';
 import { CategoriesRepo } from 'src/core/repo/categories.repo';
 import { successRes } from 'src/infrastructure/successResponse';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class ProductsService {
@@ -52,11 +52,34 @@ export class ProductsService {
     }
   }
 
-  async findAll() {
+  async findAll(search?: {
+    name?: string;
+    description?: string;
+    category?: string;
+  }) {
     try {
-      const allProducts = await this.productRepo.find({
-        relations: ['category'],
-      });
+      const query = this.productRepo
+        .createQueryBuilder('p')
+        .leftJoinAndSelect('p.category', 'category')
+        .leftJoinAndSelect('p.product_variants', 'variant');
+
+      if (search?.name) {
+        query.andWhere('p.name ILIKE :name', { name: `%${search.name}%` });
+      }
+
+      if (search?.description) {
+        query.andWhere('p.description ILIKE :desc', {
+          desc: `%${search.description}%`,
+        });
+      }
+
+      if (search?.category) {
+        query.andWhere('category.name ILIKE :cat', {
+          cat: `%${search.category}%`,
+        });
+      }
+
+      const allProducts = await query.getMany();
       return successRes(allProducts);
     } catch (error) {
       return errorCatch(error);

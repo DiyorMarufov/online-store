@@ -1,10 +1,10 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { errorCatch } from 'src/infrastructure/exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersRepo } from 'src/core/repo/users.repo';
@@ -17,13 +17,20 @@ import { SignInUserDto } from './dto/sign-in.dto';
 import { TokenService } from 'src/infrastructure/jwt';
 import { writeToCookie } from 'src/infrastructure/cookie';
 import { Response } from 'express';
+import { generateOTP } from 'src/infrastructure/otp-generator';
+import { ConfirmOtpDto } from './dto/confirm-otp.dto';
+import { MailService } from 'src/infrastructure/mail/mail.service';
+import { CartEntity } from 'src/core/entity/cart.entity';
+import { CartRepo } from 'src/core/repo/cart.repo';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UsersEntity) private readonly userRepo: UsersRepo,
+    @InjectRepository(CartEntity) private readonly cartRepo: CartRepo,
     private readonly bcrypt: BcryptService,
     private readonly jwt: TokenService,
+    private readonly mailService: MailService,
   ) {}
   async onModuleInit() {
     try {
@@ -37,7 +44,7 @@ export class UsersService {
         );
         const superAdmin = this.userRepo.create({
           full_name: config.SUPERADMIN_FULL_NAME,
-          phone_number: config.SUPERADMIN_PHONE_NUMBER,
+          email: config.SUPERADMIN_EMAIL,
           password: hashed_pass,
           role: UsersRoles.SUPERADMIN,
           is_verified: true,
@@ -52,16 +59,14 @@ export class UsersService {
 
   async createUserByRole(createUserDto: CreateUserDto, role: UsersRoles) {
     try {
-      const { phone_number, password } = createUserDto;
+      const { email, password } = createUserDto;
 
       const existsUser = await this.userRepo.findOne({
-        where: { phone_number },
+        where: { email },
       });
 
       if (existsUser) {
-        throw new ConflictException(
-          `User with phone number ${phone_number} already exists`,
-        );
+        throw new ConflictException(`User with email ${email} already exists`);
       }
 
       const hashed_pass = await this.bcrypt.encrypt(password);
@@ -79,7 +84,7 @@ export class UsersService {
       return successRes(
         {
           full_name: newUser.full_name,
-          phone_number: newUser.phone_number,
+          email: newUser.email,
           role: newUser.role,
         },
         201,
@@ -89,16 +94,83 @@ export class UsersService {
     }
   }
 
-  async signInUser(signInUserDto: SignInUserDto, res: Response) {
+  async signUpCustomer(createUserDto: CreateUserDto) {
     try {
-      const { phone_number, password } = signInUserDto;
+      const { email, password } = createUserDto;
+      const existsEmail = await this.userRepo.findOne({
+        where: { email },
+      });
+
+      if (existsEmail) {
+        throw new ConflictException(`User with email ${email} already exists`);
+      }
+
+      const otp = generateOTP();
+      await this.mailService.sendOtp(email, 'Otp', otp);
+      const hashed_pass = await this.bcrypt.encrypt(password);
+
+      const newCustomer = this.userRepo.create({
+        ...createUserDto,
+        password: hashed_pass,
+        role: UsersRoles.CUSTOMER,
+        otp,
+      });
+
+      await this.userRepo.save(newCustomer);
+
+      const newCart = this.cartRepo.create({
+        customer: newCustomer,
+      });
+      await this.cartRepo.save(newCart);
+
+      return successRes(
+        {
+          full_name: newCustomer.full_name,
+          email: newCustomer.email,
+        },
+        201,
+        `You signed up successfully and otp sent to ${email} email`,
+      );
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async confirmOtpCustomer(confirmOtpDto: ConfirmOtpDto) {
+    try {
+      const { email, otp } = confirmOtpDto;
+      const existsEmail = await this.userRepo.findOne({
+        where: { email },
+      });
+
+      if (!existsEmail) {
+        throw new BadRequestException(`Email is incorrect`);
+      }
+
+      if (existsEmail.otp !== otp) {
+        throw new BadRequestException(`Otp incorrect`);
+      }
+
+      await this.userRepo.update(existsEmail.id, {
+        is_verified: true,
+      });
+
+      return successRes({}, 200, 'You verified successfully');
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async signInCustomer(signInCustomerDto: SignInUserDto, res: Response) {
+    try {
+      const { email, password } = signInCustomerDto;
 
       const user = await this.userRepo.findOne({
-        where: { phone_number },
+        where: { email },
       });
 
       if (!user) {
-        throw new BadRequestException(`Phone number or password incorrect`);
+        throw new BadRequestException(`Email or password incorrect`);
       }
 
       if (user.status === Status.INACTIVE) {
@@ -108,7 +180,48 @@ export class UsersService {
       const matchPassword = await this.bcrypt.compare(password, user.password);
 
       if (!matchPassword) {
-        throw new BadRequestException(`Phone number or password incorrect`);
+        throw new BadRequestException(`Email or password incorrect`);
+      }
+
+      if (!user.is_verified) {
+        throw new BadRequestException(`Please first verify your account`);
+      }
+
+      const { id, role } = user;
+      const payload = { id, role };
+      const accessToken = await this.jwt.generateAccessToken(payload);
+      const refreshToken = await this.jwt.generateRefreshToken(payload);
+
+      writeToCookie(res, refreshToken, `refreshTokenCustomer`);
+      return successRes({
+        accessToken,
+        refreshToken,
+      });
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async signInUser(signInUserDto: SignInUserDto, res: Response) {
+    try {
+      const { email, password } = signInUserDto;
+
+      const user = await this.userRepo.findOne({
+        where: { email },
+      });
+
+      if (!user) {
+        throw new BadRequestException(`Email or password incorrect`);
+      }
+
+      if (user.status === Status.INACTIVE) {
+        throw new BadRequestException(`You have been blocked by superadmin`);
+      }
+
+      const matchPassword = await this.bcrypt.compare(password, user.password);
+
+      if (!matchPassword) {
+        throw new BadRequestException(`Email or password incorrect`);
       }
 
       const { id, role } = user;
@@ -137,6 +250,4 @@ export class UsersService {
       return errorCatch(error);
     }
   }
-
-  
 }

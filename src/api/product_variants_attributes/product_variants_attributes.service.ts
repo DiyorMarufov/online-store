@@ -15,6 +15,7 @@ import { ProductAttributeValuesEntity } from 'src/core/entity/product_attribute_
 import { ProductAttributeValuesRepo } from 'src/core/repo/product_attribute_values.repo';
 import { errorCatch } from 'src/infrastructure/exception';
 import { successRes } from 'src/infrastructure/successResponse';
+import slugify from 'slugify';
 
 @Injectable()
 export class ProductVariantsAttributesService {
@@ -38,6 +39,7 @@ export class ProductVariantsAttributesService {
           'product_variant_attributes',
           'product_variant_attributes.product_values',
           'product_variant_attributes.product_attribute',
+          'product',
         ],
       });
 
@@ -85,39 +87,75 @@ export class ProductVariantsAttributesService {
 
         variant.product_variant_attributes.push(newVariantAttribute);
         await this.productVariantAttributeRepo.save(newVariantAttribute);
-
-        return successRes(
-          { product_variant_id, attribute_id, value_id },
-          201,
-          'New attribute added to existing product_variant',
+      } else {
+        const alreadyHasValue = variantAttribute.product_values.some(
+          (v) => v.id === value_id,
         );
+        if (alreadyHasValue) {
+          throw new ConflictException(
+            `Product variant already has this attribute (${attribute.name}) with this value`,
+          );
+        }
+
+        await this.productVariantAttributeRepo
+          .createQueryBuilder()
+          .relation(ProductVariantAttributesEntity, 'product_values')
+          .of(variantAttribute.id)
+          .add(value.id);
       }
 
-      const alreadyHasValue = variantAttribute.product_values.some(
-        (v) => v.id === value_id,
-      );
-      if (alreadyHasValue) {
-        throw new ConflictException(
-          `Product variant already has this attribute (${attribute.name}) with this value`,
-        );
-      }
+      const updatedVariant = await this.productVariantRepo.findOne({
+        where: { id: product_variant_id },
+        relations: [
+          'product',
+          'product_variant_attributes',
+          'product_variant_attributes.product_attribute',
+          'product_variant_attributes.product_values',
+        ],
+      });
 
-      await this.productVariantAttributeRepo
-        .createQueryBuilder()
-        .relation(ProductVariantAttributesEntity, 'product_values')
-        .of(variantAttribute.id)
-        .add(value.id);
+      if (updatedVariant) {
+        const baseSlug = slugify(updatedVariant.product.name, {
+          lower: true,
+          strict: true,
+        });
+
+        const attrValues = updatedVariant.product_variant_attributes
+          .flatMap((attr) => attr.product_values.map((v) => v.value))
+          .filter(Boolean);
+
+        let finalSlug = baseSlug;
+        if (attrValues.length > 0) {
+          const joinedAttrs = slugify(attrValues.join('-'), {
+            lower: true,
+            strict: true,
+          });
+          finalSlug += `-${joinedAttrs}`;
+        }
+
+        let uniqueSlug = finalSlug;
+        let count = 1;
+        while (
+          await this.productVariantRepo.findOne({
+            where: { slug: uniqueSlug },
+          })
+        ) {
+          uniqueSlug = `${finalSlug}-${count++}`;
+        }
+
+        updatedVariant.slug = uniqueSlug;
+        await this.productVariantRepo.save(updatedVariant);
+      }
 
       return successRes(
         { product_variant_id, attribute_id, value_id },
         200,
-        'Existing product_variant_attribute updated with new value',
+        'Product variant attributes updated and slug regenerated successfully',
       );
     } catch (error) {
       return errorCatch(error);
     }
   }
-
   async findAll() {
     try {
       const allProductVariantAttributes =

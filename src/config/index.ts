@@ -8,6 +8,9 @@ export default {
   REFRESH_TOKEN_KEY: String(process.env.REFRESH_TOKEN_KEY),
   REFRESH_TOKEN_TIME: String(process.env.REFRESH_TOKEN_TIME),
   SUPERADMIN_FULL_NAME: String(process.env.SUPERADMIN_FULL_NAME),
-  SUPERADMIN_PHONE_NUMBER: String(process.env.SUPERADMIN_PHONE_NUMBER),
+  SUPERADMIN_EMAIL: String(process.env.SUPERADMIN_EMAIL),
   SUPERADMIN_PASSWORD: String(process.env.SUPERADMIN_PASSWORD),
+  SMTP_HOST: String(process.env.SMTP_HOST),
+  SMTP_USER: String(process.env.SMTP_USER),
+  SMTP_PASS: String(process.env.SMTP_PASS),
 };

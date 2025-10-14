@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import {
@@ -6,11 +6,13 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
+import { ProductSearchDto } from './dto/search-product.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -50,36 +52,12 @@ export class ProductsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all products' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of all products',
-    schema: {
-      example: {
-        success: true,
-        statusCode: 200,
-        data: [
-          {
-            id: 1,
-            category_id: 1,
-            name: 'iPhone 15 Pro',
-            description: 'The latest Apple smartphone',
-            image: 'https://example.com/images/iphone15.jpg',
-            is_active: 'ACTIVE',
-          },
-          {
-            id: 2,
-            category_id: 2,
-            name: 'MacBook Air M3',
-            description: 'Powerful laptop from Apple',
-            image: 'https://example.com/images/macbook.jpg',
-            is_active: 'ACTIVE',
-          },
-        ],
-      },
-    },
-  })
-  findAll() {
-    return this.productsService.findAll();
+  @ApiOperation({ summary: 'Get all products (with optional search filters)' })
+  @ApiResponse({ status: 200, description: 'List of all products' })
+  @ApiQuery({ name: 'name', required: false })
+  @ApiQuery({ name: 'description', required: false })
+  @ApiQuery({ name: 'category', required: false })
+  findAll(@Query() search: ProductSearchDto) {
+    return this.productsService.findAll(search);
   }
 }

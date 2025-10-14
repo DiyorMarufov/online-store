@@ -5,6 +5,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { SignInUserDto } from './dto/sign-in.dto';
 import { Response } from 'express';
 import { UsersRoles } from 'src/common/enum';
+import { ConfirmOtpDto } from './dto/confirm-otp.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -16,7 +17,7 @@ export class UsersController {
   @ApiBody({ type: CreateUserDto })
   @ApiResponse({ status: 201, description: 'Admin user successfully created' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  async createAdmin(@Body() createUserDto: CreateUserDto) {
+  createAdmin(@Body() createUserDto: CreateUserDto) {
     return this.usersService.createUserByRole(createUserDto, UsersRoles.ADMIN);
   }
 
@@ -28,13 +29,54 @@ export class UsersController {
     description: 'Merchant user successfully created',
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  async createMerchant(@Body() createUserDto: CreateUserDto) {
+  createMerchant(@Body() createUserDto: CreateUserDto) {
     return this.usersService.createUserByRole(
       createUserDto,
       UsersRoles.MERCHANT,
     );
   }
 
+  @Post('confirm-otp/customer')
+  @ApiOperation({ summary: 'Confirm OTP for customer' })
+  @ApiBody({ type: ConfirmOtpDto })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP successfully confirmed',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid or expired OTP',
+  })
+  confirmOtpCustomer(@Body() confirmOtpCustomer: ConfirmOtpDto) {
+    return this.usersService.confirmOtpCustomer(confirmOtpCustomer);
+  }
+
+  @Post('signin/customer')
+  @ApiOperation({ summary: 'Sign in customer' })
+  @ApiBody({ type: SignInUserDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Customer signed in successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid email or password',
+  })
+  signInCustomer(
+    @Body() signInCustomerDto: SignInUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.usersService.signInCustomer(signInCustomerDto, res);
+  }
+
+  @Post('customer')
+  @ApiOperation({ summary: 'Register a new customer' })
+  @ApiResponse({ status: 201, description: 'Customer successfully registered' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 409, description: 'User already exists' })
+  signUpCustomer(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.signUpCustomer(createUserDto);
+  }
   @Post('signin')
   @ApiOperation({ summary: 'Sign in a user' })
   @ApiResponse({
@@ -49,7 +91,7 @@ export class UsersController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Invalid phone number or password',
+    description: 'Invalid email or password',
     schema: {
       example: {
         message: 'Invalid credentials',
@@ -58,7 +100,7 @@ export class UsersController {
       },
     },
   })
-  async signInUser(
+  signInUser(
     @Body() signInUserDto: SignInUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {

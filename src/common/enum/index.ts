@@ -25,3 +25,27 @@ export enum OrderStatus {
   DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
 }
+
+export enum PaymentMethods {
+  CARD = 'card',
+  VISA = 'visa',
+  MASTERCARD = 'mastercard',
+  AMEX = 'amex',
+  UZCARD = 'uzcard',
+  HUMO = 'humo',
+  PAYPAL = 'paypal',
+  PAYME = 'payme',
+  CLICK = 'click',
+  STRIPE = 'stripe',
+  CASH = 'cash',
+  CASH_ON_DELIVERY = 'cash_on_delivery',
+  BANK_TRANSFER = 'bank_transfer',
+  QR_PAYMENT = 'qr_payment',
+}
+
+export enum PaymentStatus {
+  PENDING = 'pending',
+  FAILED = 'failed',
+  SUCCESS = 'success',
+  CANCELLED = 'cancelled',
+}

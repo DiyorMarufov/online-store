@@ -13,8 +13,8 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'full_name' })
   full_name: string;
 
-  @Column({ type: 'varchar', name: 'phone_number', unique: true })
-  phone_number: string;
+  @Column({ type: 'varchar', name: 'email', unique: true })
+  email: string;
 
   @Column({ type: 'varchar', name: 'password' })
   password: string;
@@ -37,6 +37,13 @@ export class UsersEntity extends BaseEntity {
     default: Status.ACTIVE,
   })
   status: Status;
+
+  @Column({
+    type: 'varchar',
+    name: 'otp',
+    nullable: true,
+  })
+  otp: string;
 
   @OneToOne(() => MerchantsEntity, (merchant) => merchant.user)
   merchant: MerchantsEntity;

@@ -1,26 +1,39 @@
-import { Injectable } from '@nestjs/common';
-import { CreateCartDto } from './dto/create-cart.dto';
-import { UpdateCartDto } from './dto/update-cart.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CartEntity } from 'src/core/entity/cart.entity';
+import { CartRepo } from 'src/core/repo/cart.repo';
+import { errorCatch } from 'src/infrastructure/exception';
+import { successRes } from 'src/infrastructure/successResponse';
 
 @Injectable()
 export class CartService {
-  create(createCartDto: CreateCartDto) {
-    return 'This action adds a new cart';
+  constructor(
+    @InjectRepository(CartEntity) private readonly cartRepo: CartRepo,
+  ) {}
+  async findAll() {
+    try {
+      const allCarts = await this.cartRepo.find({
+        relations: ['customer', 'cart_items'],
+      });
+      return successRes(allCarts);
+    } catch (error) {
+      return errorCatch(error);
+    }
   }
 
-  findAll() {
-    return `This action returns all cart`;
-  }
+  async findOne(id: number) {
+    try {
+      const cart = await this.cartRepo.findOne({
+        where: { id },
+        relations: ['customer', 'cart_items'],
+      });
 
-  findOne(id: number) {
-    return `This action returns a #${id} cart`;
-  }
-
-  update(id: number, updateCartDto: UpdateCartDto) {
-    return `This action updates a #${id} cart`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} cart`;
+      if (!cart) {
+        throw new NotFoundException(`Cart with ID ${id} not found`);
+      }
+      return successRes(cart);
+    } catch (error) {
+      return errorCatch(error);
+    }
   }
 }

@@ -8,7 +8,7 @@ import { ProductsEntity } from 'src/core/entity/products.entity';
 import { errorCatch } from 'src/infrastructure/exception';
 import { ProductsRepo } from 'src/core/repo/products.repo';
 import { successRes } from 'src/infrastructure/successResponse';
-import { slugify } from 'src/infrastructure/utils/slugify';
+import slugify from 'slugify';
 
 @Injectable()
 export class ProductVariantsService {
@@ -36,42 +36,35 @@ export class ProductVariantsService {
         );
       }
 
-      const newProduct = this.productVariantRepo.create({
+      const newVariant = this.productVariantRepo.create({
         ...createProductVariantDto,
         product: existsProduct,
       });
+      await this.productVariantRepo.save(newVariant);
 
-      await this.productVariantRepo.save(newProduct);
-
-      const valuesArray =
-        newProduct.product_variant_attributes?.flatMap((attr) =>
-          attr.product_values.map((val) => val.value),
-        ) || [];
-
-      let baseSlug = slugify(existsProduct.name);
-      if (valuesArray.length > 0) {
-        baseSlug += `-${slugify(valuesArray.join('-'))}`;
-      }
+      let baseSlug = slugify(existsProduct.name, { lower: true, strict: true });
 
       let uniqueSlug = baseSlug;
       let count = 1;
       while (
         await this.productVariantRepo.findOne({ where: { slug: uniqueSlug } })
       ) {
-        uniqueSlug = `${baseSlug}_${count}`;
-        count++;
+        uniqueSlug = `${baseSlug}-${count++}`;
       }
 
-      newProduct.slug = uniqueSlug;
-      await this.productVariantRepo.save(newProduct);
+      newVariant.slug = uniqueSlug;
+      await this.productVariantRepo.save(newVariant);
 
-      return successRes({
-        product_id: newProduct.product.id,
-        price: newProduct.price,
-        stock: newProduct.stock,
-        image: newProduct.image,
-        slug: newProduct.slug,
-      });
+      return successRes(
+        {
+          product_id: newVariant.product.id,
+          price: newVariant.price,
+          stock: newVariant.stock,
+          image: newVariant.image,
+          slug: newVariant.slug,
+        },
+        201,
+      );
     } catch (error) {
       return errorCatch(error);
     }
