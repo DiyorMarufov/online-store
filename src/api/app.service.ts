@@ -3,18 +3,6 @@ import { AppModule } from './app.module';
 import { HttpStatus, ValidationPipe } from '@nestjs/common';
 import config from 'src/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { UsersModule } from './users/users.module';
-import { CategoriesModule } from './categories/categories.module';
-import { ProductsModule } from './products/products.module';
-import { ProductVariantsModule } from './product_variants/product_variants.module';
-import { MerchantsModule } from './merchants/merchants.module';
-import { MerchantProductsModule } from './merchant_products/merchant_products.module';
-import { ProductAttributesModule } from './product_attributes/product_attributes.module';
-import { ProductAttributeValuesModule } from './product_attribute_values/product_attribute_values.module';
-import { ProductVariantsAttributesModule } from './product_variants_attributes/product_variants_attributes.module';
-import { FavoritesModule } from './favorites/favorites.module';
-import { CartModule } from './cart/cart.module';
-import { CartItemsModule } from './cart_items/cart_items.module';
 
 export default class Application {
   public static async main(): Promise<void> {
@@ -44,22 +32,7 @@ export default class Application {
       )
       .build();
 
-    const document = SwaggerModule.createDocument(app, swaggerConfig, {
-      include: [
-        UsersModule,
-        CategoriesModule,
-        ProductsModule,
-        ProductVariantsModule,
-        MerchantsModule,
-        MerchantProductsModule,
-        ProductAttributesModule,
-        ProductAttributeValuesModule,
-        ProductVariantsAttributesModule,
-        FavoritesModule,
-        CartModule,
-        CartItemsModule,
-      ],
-    });
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('api', app, document, {
       swaggerOptions: {
         persistAuthorization: true,

@@ -1,34 +1,42 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { OrderItemsService } from './order_items.service';
-import { CreateOrderItemDto } from './dto/create-order_item.dto';
-import { UpdateOrderItemDto } from './dto/update-order_item.dto';
+import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
 
+@ApiTags('Order Items')
 @Controller('order-items')
 export class OrderItemsController {
   constructor(private readonly orderItemsService: OrderItemsService) {}
 
-  @Post()
-  create(@Body() createOrderItemDto: CreateOrderItemDto) {
-    return this.orderItemsService.create(createOrderItemDto);
-  }
-
   @Get()
+  @ApiOperation({ summary: 'Get all order items' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all order items',
+    type: [OrderItemsEntity],
+  })
   findAll() {
     return this.orderItemsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.orderItemsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOrderItemDto: UpdateOrderItemDto) {
-    return this.orderItemsService.update(+id, updateOrderItemDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.orderItemsService.remove(+id);
+  @ApiOperation({ summary: 'Get one order item by ID' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    example: 1,
+    description: 'Order item ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns one order item',
+    type: OrderItemsEntity,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Order item not found',
+  })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.orderItemsService.findOne(id);
   }
 }

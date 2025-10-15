@@ -1,26 +1,181 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UsersEntity } from 'src/core/entity/users.entity';
+import { AddressesEntity } from 'src/core/entity/addresses.entity';
+import { CartItemsEntity } from 'src/core/entity/cart_items.entity';
+import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
+import { PaymentEntity } from 'src/core/entity/payment.entity';
+import { errorCatch } from 'src/infrastructure/exception';
+import { DataSource, In } from 'typeorm';
+import { OrdersEntity } from 'src/core/entity/orders.entity';
+import { PaymentStatus, UsersRoles } from 'src/common/enum';
+import { v4 } from 'uuid';
+import { successRes } from 'src/infrastructure/successResponse';
+import { OrdersRepo } from 'src/core/repo/orders.repo';
+import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
 
 @Injectable()
 export class OrdersService {
-  create(createOrderDto: CreateOrderDto) {
-    return 'This action adds a new order';
+  constructor(
+    @InjectRepository(OrdersEntity) private readonly orderRepo: OrdersRepo,
+    private readonly dataSource: DataSource,
+  ) {}
+  async create(createOrderDto: CreateOrderDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const { customer_id, address_id, cart_items_id, payment_method } =
+        createOrderDto;
+      const existsUser = await queryRunner.manager.findOne(UsersEntity, {
+        where: { id: customer_id },
+      });
+
+      if (!existsUser) {
+        throw new NotFoundException(`User with ID ${customer_id} not found`);
+      }
+
+      if (existsUser.role !== UsersRoles.CUSTOMER) {
+        throw new BadRequestException('Only customer can place orders');
+      }
+
+      const existsAddress = await queryRunner.manager.findOne(AddressesEntity, {
+        where: {
+          id: address_id,
+        },
+        relations: ['user'],
+      });
+
+      if (!existsAddress) {
+        throw new NotFoundException(`Address with ID ${address_id} not found`);
+      }
+
+      if (existsAddress.user.id !== existsUser.id) {
+        throw new BadRequestException(
+          `Address does not belong to this user with ID ${existsUser.id}`,
+        );
+      }
+
+      const existsCartItems = await queryRunner.manager.find(CartItemsEntity, {
+        where: { id: In(cart_items_id) },
+        relations: ['cart', 'cart.customer', 'product_variant'],
+      });
+
+      if (!existsCartItems.length) {
+        throw new NotFoundException(`No valid cart items found`);
+      }
+
+      for (let item of existsCartItems) {
+        if (!item.cart.customer) {
+          throw new BadRequestException('Invalid cart item');
+        }
+      }
+      const allBelongToUser = existsCartItems.every(
+        (item) => item.cart.customer.id === customer_id,
+      );
+
+      if (!allBelongToUser) {
+        throw new BadRequestException(
+          'Some cart items do not belong to this user',
+        );
+      }
+
+      const total_price = existsCartItems.reduce(
+        (acc, item) => acc + item.quantity * item.product_variant.price,
+        0,
+      );
+
+      const newOrder = queryRunner.manager.create(OrdersEntity, {
+        customer: existsUser,
+        address: existsAddress,
+        total_price,
+      });
+
+      await queryRunner.manager.save(OrdersEntity, newOrder);
+
+      const newPayment = queryRunner.manager.create(PaymentEntity, {
+        order: newOrder,
+        amount: total_price,
+        method: payment_method,
+        status: PaymentStatus.SUCCESS,
+        transaction_id: v4(),
+      });
+
+      await queryRunner.manager.save(PaymentEntity, newPayment);
+
+      if (newPayment.status !== PaymentStatus.SUCCESS) {
+        throw new BadRequestException(`Payment failed`);
+      }
+
+      for (let item of existsCartItems) {
+        if (item.quantity > item.product_variant.stock) {
+          throw new BadRequestException(
+            'Item quantity should not exceed the main stock',
+          );
+        }
+      }
+
+      const newOrderItems = existsCartItems.map((item) => ({
+        order: newOrder,
+        product_variant: item.product_variant,
+        quantity: item.quantity,
+        price: item.product_variant.price,
+      }));
+
+      await queryRunner.manager.insert(OrderItemsEntity, newOrderItems);
+
+      for (const item of existsCartItems) {
+        const newStock = item.product_variant.stock - item.quantity;
+
+        if (newStock < 0) {
+          throw new BadRequestException(
+            `Not enough stock for product_variant ID ${item.product_variant.id}`,
+          );
+        }
+
+        await queryRunner.manager.update(
+          ProductVariantsEntity,
+          { id: item.product_variant.id },
+          { stock: newStock },
+        );
+      }
+
+      await queryRunner.manager.delete(CartItemsEntity, {
+        id: In(cart_items_id),
+      });
+
+      await queryRunner.commitTransaction();
+      return successRes(
+        {
+          customer_id: newOrder.customer.id,
+          address_id: newOrder.address.id,
+          total_price: newOrder.total_price,
+          status: newOrder.status,
+        },
+        201,
+        'Order created successfully',
+      );
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      return errorCatch(error);
+    } finally {
+      await queryRunner.release();
+    }
   }
 
-  findAll() {
-    return `This action returns all orders`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
-  }
-
-  update(id: number, updateOrderDto: UpdateOrderDto) {
-    return `This action updates a #${id} order`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} order`;
+  async findAll() {
+    try {
+      const allOrders = await this.orderRepo.find({
+        relations: ['order_items'],
+      });
+      return successRes(allOrders);
+    } catch (error) {
+      return errorCatch(error);
+    }
   }
 }

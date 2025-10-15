@@ -12,7 +12,16 @@ export class PaymentEntity extends BaseEntity {
   @JoinColumn({ name: 'order_id', referencedColumnName: 'id' })
   order: OrdersEntity;
 
-  @Column({ type: 'decimal', name: 'amount', precision: 10, scale: 2 })
+  @Column({
+    type: 'decimal',
+    name: 'amount',
+    precision: 10,
+    scale: 2,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
   amount: number;
 
   @Column({ type: 'enum', name: 'method', enum: PaymentMethods })

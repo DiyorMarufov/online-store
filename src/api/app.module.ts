@@ -18,6 +18,7 @@ import { ProductVariantsModule } from './product_variants/product_variants.modul
 import { ProductVariantsAttributesModule } from './product_variants_attributes/product_variants_attributes.module';
 import config from 'src/config';
 import { JwtModule } from '@nestjs/jwt';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { JwtModule } from '@nestjs/jwt';
     MerchantsModule,
     ProductVariantsModule,
     ProductVariantsAttributesModule,
+    PaymentsModule,
   ],
 })
 export class AppModule {}
