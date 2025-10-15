@@ -69,7 +69,7 @@ export class UsersController {
     return this.usersService.signInCustomer(signInCustomerDto, res);
   }
 
-  @Post('customer')
+  @Post('signup/customer')
   @ApiOperation({ summary: 'Register a new customer' })
   @ApiResponse({ status: 201, description: 'Customer successfully registered' })
   @ApiResponse({ status: 400, description: 'Validation error' })

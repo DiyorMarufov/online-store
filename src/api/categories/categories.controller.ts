@@ -1,9 +1,19 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Delete,
+  Param,
+  Query,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiParam,
 } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -103,5 +113,25 @@ export class CategoriesController {
   })
   findAll() {
     return this.categoriesService.findAll();
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete category by ID' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID of the category to delete',
+    example: 5,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Category deleted successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Category not found',
+  })
+  delete(@Param('id') id: number) {
+    return this.categoriesService.delete(id);
   }
 }

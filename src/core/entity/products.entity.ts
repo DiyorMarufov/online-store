@@ -32,6 +32,20 @@ export class ProductsEntity extends BaseEntity {
   })
   is_active: Status;
 
+  @Column({
+    type: 'decimal',
+    name: 'average_rating',
+    nullable: true,
+    precision: 2,
+    scale: 1,
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
+  average_rating?: number;
+
   @OneToMany(
     () => ProductVariantsEntity,
     (productVariant) => productVariant.product,

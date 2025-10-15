@@ -12,9 +12,12 @@ export class CartService {
   ) {}
   async findAll() {
     try {
-      const allCarts = await this.cartRepo.find({
-        relations: ['customer', 'cart_items'],
-      });
+      const allCarts = await this.cartRepo
+        .createQueryBuilder('cart')
+        .leftJoinAndSelect('cart.cart_items', 'cart_items')
+        .leftJoin('cart.customer', 'customer')
+        .addSelect(['customer.id', 'customer.full_name', 'customer.email'])
+        .getMany();
       return successRes(allCarts);
     } catch (error) {
       return errorCatch(error);
@@ -23,10 +26,13 @@ export class CartService {
 
   async findOne(id: number) {
     try {
-      const cart = await this.cartRepo.findOne({
-        where: { id },
-        relations: ['customer', 'cart_items'],
-      });
+      const cart = await this.cartRepo
+        .createQueryBuilder('cart')
+        .leftJoinAndSelect('cart.cart_items', 'cart_items')
+        .leftJoin('cart.customer', 'customer')
+        .addSelect(['customer.id', 'customer.full_name', 'customer.email'])
+        .where('cart.id = :id', { id })
+        .getOne();
 
       if (!cart) {
         throw new NotFoundException(`Cart with ID ${id} not found`);

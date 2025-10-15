@@ -57,7 +57,7 @@ export class ProductsController {
   @ApiQuery({ name: 'name', required: false })
   @ApiQuery({ name: 'description', required: false })
   @ApiQuery({ name: 'category', required: false })
-  findAll(@Query() search: ProductSearchDto) {
+  findAll(@Query() search?: ProductSearchDto) {
     return this.productsService.findAll(search);
   }
 }

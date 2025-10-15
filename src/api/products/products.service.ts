@@ -7,7 +7,7 @@ import { errorCatch } from 'src/infrastructure/exception';
 import { CategoriesEntity } from 'src/core/entity/categories.entity';
 import { CategoriesRepo } from 'src/core/repo/categories.repo';
 import { successRes } from 'src/infrastructure/successResponse';
-import { Like } from 'typeorm';
+import { ProductSearchDto } from './dto/search-product.dto';
 
 @Injectable()
 export class ProductsService {
@@ -52,35 +52,91 @@ export class ProductsService {
     }
   }
 
-  async findAll(search?: {
-    name?: string;
-    description?: string;
-    category?: string;
-  }) {
+  async findAll(search?: ProductSearchDto) {
     try {
+      const page = search?.page || 1;
+      const limit = search?.limit || 10;
+
       const query = this.productRepo
         .createQueryBuilder('p')
         .leftJoinAndSelect('p.category', 'category')
-        .leftJoinAndSelect('p.product_variants', 'variant');
+        .leftJoinAndSelect('p.product_variants', 'variant')
+        .leftJoinAndSelect('p.reviews', 'reviews');
 
       if (search?.name) {
         query.andWhere('p.name ILIKE :name', { name: `%${search.name}%` });
       }
-
       if (search?.description) {
         query.andWhere('p.description ILIKE :desc', {
           desc: `%${search.description}%`,
         });
       }
-
       if (search?.category) {
         query.andWhere('category.name ILIKE :cat', {
           cat: `%${search.category}%`,
         });
       }
 
-      const allProducts = await query.getMany();
-      return successRes(allProducts);
+      if (search?.attribute_value) {
+        query.leftJoin('variant.attribute_values', 'attr');
+        query.andWhere('attr.value ILIKE :attrValue', {
+          attrValue: `%${search.attribute_value}%`,
+        });
+      }
+
+      const orderConditions: { [key: string]: 'ASC' | 'DESC' } = {};
+
+      if (search?.popular) {
+        query.leftJoinAndSelect('p.favorites', 'favorites');
+        query.groupBy('p.id');
+        orderConditions['COUNT(favorites.id)'] = 'DESC';
+      }
+
+      if (search?.most_rated) {
+        orderConditions['p.average_rating'] = search.most_rated
+          ? 'DESC'
+          : 'ASC';
+      }
+
+      if (search?.cheap) {
+        orderConditions['variant.price'] = 'ASC';
+      }
+
+      if (search?.expensive) {
+        orderConditions['variant.price'] = 'DESC';
+      }
+
+      if (search?.recent_orders) {
+        query
+          .leftJoin('p.product_variants', 'product_variants')
+          .leftJoin('p.product_variants.order_items', 'order_items')
+          .orderBy('MAX(order_items.created_at)', 'DESC')
+          .groupBy('p.id');
+      }
+
+      if (Object.keys(orderConditions).length > 0) {
+        const [firstKey, firstValue] = Object.entries(orderConditions)[0];
+        query.orderBy(firstKey, firstValue as 'ASC' | 'DESC');
+        Object.entries(orderConditions)
+          .slice(1)
+          .forEach(([key, value]) => {
+            query.addOrderBy(key, value as 'ASC' | 'DESC');
+          });
+      }
+
+      query.skip((page - 1) * limit).take(limit);
+
+      const [products, total] = await query.getManyAndCount();
+
+      return successRes({
+        data: products,
+        meta: {
+          total,
+          page,
+          limit,
+          last_page: Math.ceil(total / limit),
+        },
+      });
     } catch (error) {
       return errorCatch(error);
     }
