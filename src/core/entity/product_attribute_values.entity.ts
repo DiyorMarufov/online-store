@@ -1,5 +1,5 @@
 import { BaseEntity } from 'src/common/database/baseEntity';
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne } from 'typeorm';
 import { ProductAttributesEntity } from './product_attributes.entity';
 import { ProductVariantAttributesEntity } from './product_variant_attributes.entity';
 
