@@ -140,13 +140,8 @@ export class ProductsService {
         .leftJoinAndSelect('category.children', 'children')
         .getMany();
 
-      const mappedCategories = allCategories.map((c) => ({
-        id: c.id,
-        name: c.name,
-        parent: c.parent?.id,
-      }));
       const findAllChildIds = (id: number): number[] => {
-        const children = mappedCategories.filter((c) => c.parent === id);
+        const children = allCategories.filter((c) => c.parent?.id === id);
         let ids = [id];
         for (const child of children) {
           ids = ids.concat(findAllChildIds(child.id));

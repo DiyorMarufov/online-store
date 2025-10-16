@@ -30,8 +30,8 @@ export class ProductVariantsEntity extends BaseEntity {
   @Column({ type: 'int', name: 'stock', unsigned: true })
   stock: number;
 
-  @Column({ type: 'varchar', name: 'image' })
-  image: string;
+  @Column({ type: 'varchar', name: 'image', nullable: true })
+  image?: string;
 
   @Column({ type: 'varchar', name: 'slug', unique: true, nullable: true })
   slug: string;
