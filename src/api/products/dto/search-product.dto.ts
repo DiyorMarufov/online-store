@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, IsNumber } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ProductSearchDto {
@@ -18,49 +24,26 @@ export class ProductSearchDto {
   @IsString()
   category?: string;
 
-  @ApiPropertyOptional({ description: 'Filter popular products (true/false)' })
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  popular?: boolean;
-
-  @ApiPropertyOptional({ description: 'Filter cheapest products (true/false)' })
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  cheap?: boolean;
-
   @ApiPropertyOptional({
-    description: 'Filter expensive products (true/false)',
+    enum: [
+      // 'popular',
+      'cheap',
+      'expensive',
+      'most_rated',
+      // 'most_orders',
+      'recent_orders',
+    ],
   })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  expensive?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Filter most rated products (true/false)',
-  })
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  most_rated?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Filter products with most orders (true/false)',
-  })
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  most_orders?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Filter products with recent orders (true/false)',
-  })
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  recent_orders?: boolean;
+  @IsEnum([
+    // 'popular',
+    'cheap',
+    'expensive',
+    'most_rated',
+    // 'most_orders',
+    'recent_orders',
+  ])
+  sort?: string;
 
   @ApiPropertyOptional({ description: 'Filter by attribute ID' })
   @IsOptional()

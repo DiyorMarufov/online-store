@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Query,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import {
@@ -7,6 +16,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
@@ -59,5 +69,82 @@ export class ProductsController {
   @ApiQuery({ name: 'category', required: false })
   findAll(@Query() search?: ProductSearchDto) {
     return this.productsService.findAll(search);
+  }
+
+  @Get('by-category/:categoryId')
+  @ApiOperation({
+    summary: 'Get products by category (includes subcategories)',
+  })
+  @ApiParam({
+    name: 'categoryId',
+    type: Number,
+    description: 'Category ID (can be parent, child, or sub-child)',
+    example: 3,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    example: 1,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    example: 10,
+    description: 'Number of products per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    enum: ['cheap', 'expensive', 'most_rated', 'recent_products'],
+    description: 'Sort products by different criteria',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Search by product name',
+  })
+  @ApiQuery({
+    name: 'attribute_value',
+    required: false,
+    type: String,
+    description: 'Search by product variant attribute value',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully fetched products by category',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Category not found',
+  })
+  findProductsByCategoryId(
+    @Param('categoryId') categoryId: number,
+    @Query() search?: ProductSearchDto,
+  ) {
+    return this.productsService.findProductsByCategoryId(categoryId, search);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get product details by ID' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Product ID',
+    example: 12,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully fetched product details',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found',
+  })
+  findProductById(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.findProductById(id);
   }
 }

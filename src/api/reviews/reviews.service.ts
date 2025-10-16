@@ -13,11 +13,9 @@ import { ReviewsEntity } from 'src/core/entity/reviews.entity';
 import { ReviewsRepo } from 'src/core/repo/reviews.repo';
 import { errorCatch } from 'src/infrastructure/exception';
 import { OrderStatus, UsersRoles } from 'src/common/enum';
-import { OrdersRepo } from 'src/core/repo/orders.repo';
-import { OrdersEntity } from 'src/core/entity/orders.entity';
-import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
 import { OrderItemsRepo } from 'src/core/repo/order_items.repo';
 import { successRes } from 'src/infrastructure/successResponse';
+import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
 
 @Injectable()
 export class ReviewsService {
@@ -26,8 +24,6 @@ export class ReviewsService {
     @InjectRepository(UsersEntity) private readonly userRepo: UsersRepo,
     @InjectRepository(ProductsEntity)
     private readonly productRepo: ProductsRepo,
-    @InjectRepository(OrdersEntity)
-    private readonly orderRepo: OrdersRepo,
     @InjectRepository(OrderItemsEntity)
     private readonly orderItemRepo: OrderItemsRepo,
   ) {}
@@ -79,6 +75,16 @@ export class ReviewsService {
       });
 
       await this.reviewRepo.save(newReview);
+
+      const { avg } = await this.reviewRepo
+        .createQueryBuilder('r')
+        .select('AVG(r.rating)', 'avg')
+        .where('r.product_id = :productId', { productId: existsProduct.id })
+        .getRawOne();
+
+      await this.productRepo.update(existsProduct.id, {
+        average_rating: avg,
+      });
 
       return successRes(
         {

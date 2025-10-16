@@ -7,7 +7,6 @@ import { ProductsEntity } from 'src/core/entity/products.entity';
 import { ReviewsEntity } from 'src/core/entity/reviews.entity';
 import { TokenService } from 'src/infrastructure/jwt';
 import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
-import { OrdersEntity } from 'src/core/entity/orders.entity';
 
 @Module({
   imports: [
@@ -16,7 +15,6 @@ import { OrdersEntity } from 'src/core/entity/orders.entity';
       ProductsEntity,
       ReviewsEntity,
       OrderItemsEntity,
-      OrdersEntity,
     ]),
   ],
   controllers: [ReviewsController],

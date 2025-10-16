@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductVariantDto } from './dto/create-product_variant.dto';
-import { UpdateProductVariantDto } from './dto/update-product_variant.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
 import { ProductVariantsRepo } from 'src/core/repo/product_variants.repo';
@@ -72,9 +71,11 @@ export class ProductVariantsService {
 
   async findAll() {
     try {
-      const allProductVariants = await this.productVariantRepo.find({
-        relations: ['product'],
-      });
+      const allProductVariants = await this.productVariantRepo
+        .createQueryBuilder('pv')
+        .leftJoinAndSelect('pv.product', 'products')
+        .orderBy('pv.id', 'ASC')
+        .getMany();
       return successRes(allProductVariants);
     } catch (error) {
       return errorCatch(error);

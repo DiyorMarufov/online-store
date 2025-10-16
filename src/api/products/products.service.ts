@@ -61,16 +61,20 @@ export class ProductsService {
         .createQueryBuilder('p')
         .leftJoinAndSelect('p.category', 'category')
         .leftJoinAndSelect('p.product_variants', 'variant')
-        .leftJoinAndSelect('p.reviews', 'reviews');
+        .leftJoinAndSelect('p.reviews', 'reviews')
+        .orderBy('p.id', 'ASC');
 
+      // 🔍 Filtering
       if (search?.name) {
         query.andWhere('p.name ILIKE :name', { name: `%${search.name}%` });
       }
+
       if (search?.description) {
         query.andWhere('p.description ILIKE :desc', {
           desc: `%${search.description}%`,
         });
       }
+
       if (search?.category) {
         query.andWhere('category.name ILIKE :cat', {
           cat: `%${search.category}%`,
@@ -78,50 +82,33 @@ export class ProductsService {
       }
 
       if (search?.attribute_value) {
-        query.leftJoin('variant.attribute_values', 'attr');
-        query.andWhere('attr.value ILIKE :attrValue', {
+        query.leftJoin('variant.product_variant_attributes', 'attr');
+        query.leftJoin('attr.product_values', 'value');
+        query.andWhere('value.value ILIKE :attrValue', {
           attrValue: `%${search.attribute_value}%`,
         });
       }
 
-      const orderConditions: { [key: string]: 'ASC' | 'DESC' } = {};
+      switch (search?.sort) {
+        case 'cheap':
+          query.orderBy('variant.price', 'ASC');
+          break;
 
-      if (search?.popular) {
-        query.leftJoinAndSelect('p.favorites', 'favorites');
-        query.groupBy('p.id');
-        orderConditions['COUNT(favorites.id)'] = 'DESC';
-      }
+        case 'expensive':
+          query.orderBy('variant.price', 'DESC');
+          break;
 
-      if (search?.most_rated) {
-        orderConditions['p.average_rating'] = search.most_rated
-          ? 'DESC'
-          : 'ASC';
-      }
+        case 'most_rated':
+          query.orderBy('p.average_rating', 'DESC');
+          break;
 
-      if (search?.cheap) {
-        orderConditions['variant.price'] = 'ASC';
-      }
+        case 'recent_products':
+          query.orderBy('p.created_at', 'DESC');
+          break;
 
-      if (search?.expensive) {
-        orderConditions['variant.price'] = 'DESC';
-      }
-
-      if (search?.recent_orders) {
-        query
-          .leftJoin('p.product_variants', 'product_variants')
-          .leftJoin('p.product_variants.order_items', 'order_items')
-          .orderBy('MAX(order_items.created_at)', 'DESC')
-          .groupBy('p.id');
-      }
-
-      if (Object.keys(orderConditions).length > 0) {
-        const [firstKey, firstValue] = Object.entries(orderConditions)[0];
-        query.orderBy(firstKey, firstValue as 'ASC' | 'DESC');
-        Object.entries(orderConditions)
-          .slice(1)
-          .forEach(([key, value]) => {
-            query.addOrderBy(key, value as 'ASC' | 'DESC');
-          });
+        default:
+          query.orderBy('p.id', 'ASC');
+          break;
       }
 
       query.skip((page - 1) * limit).take(limit);
@@ -137,6 +124,113 @@ export class ProductsService {
           last_page: Math.ceil(total / limit),
         },
       });
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findProductsByCategoryId(
+    category_id: number,
+    search?: ProductSearchDto,
+  ) {
+    try {
+      const allCategories = await this.categoryRepo
+        .createQueryBuilder('category')
+        .leftJoinAndSelect('category.parent', 'parent')
+        .leftJoinAndSelect('category.children', 'children')
+        .getMany();
+
+      const mappedCategories = allCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        parent: c.parent?.id,
+      }));
+      const findAllChildIds = (id: number): number[] => {
+        const children = mappedCategories.filter((c) => c.parent === id);
+        let ids = [id];
+        for (const child of children) {
+          ids = ids.concat(findAllChildIds(child.id));
+        }
+        return ids;
+      };
+      const categoryIds = findAllChildIds(Number(category_id))
+        .map((id) => Number(id))
+        .filter((id) => !isNaN(id));
+      const page = search?.page || 1;
+      const limit = search?.limit || 10;
+
+      const query = this.productRepo
+        .createQueryBuilder('p')
+        .leftJoinAndSelect('p.category', 'category')
+        .leftJoinAndSelect('p.product_variants', 'variant')
+        .where('category.id IN (:...ids)', { ids: categoryIds });
+
+      if (search?.name) {
+        query.andWhere('p.name ILIKE :name', { name: `%${search.name}%` });
+      }
+
+      if (search?.description) {
+        query.andWhere('p.description ILIKE :desc', {
+          desc: `%${search.description}%`,
+        });
+      }
+
+      if (search?.attribute_value) {
+        query.leftJoin('variant.product_variant_attributes', 'attr');
+        query.leftJoin('attr.product_values', 'value');
+        query.andWhere('value.value ILIKE :attrValue', {
+          attrValue: `%${search.attribute_value}%`,
+        });
+      }
+
+      switch (search?.sort) {
+        case 'cheap':
+          query.orderBy('variant.price', 'ASC');
+          break;
+        case 'expensive':
+          query.orderBy('variant.price', 'DESC');
+          break;
+        case 'most_rated':
+          query.orderBy('p.average_rating', 'DESC');
+          break;
+        case 'recent_products':
+          query.orderBy('p.created_at', 'DESC');
+          break;
+        default:
+          query.orderBy('p.id', 'ASC');
+          break;
+      }
+
+      query.skip((page - 1) * limit).take(limit);
+
+      const [products, total] = await query.getManyAndCount();
+
+      return successRes({
+        data: products,
+        meta: {
+          total,
+          page,
+          limit,
+          last_page: Math.ceil(total / limit),
+        },
+      });
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findProductById(id: number) {
+    try {
+      const product = await this.productRepo.findOne({
+        where: { id },
+        relations: ['category', 'product_variants', 'reviews'],
+      });
+
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${id} not found`);
+      }
+
+      return successRes(product);
     } catch (error) {
       return errorCatch(error);
     }
