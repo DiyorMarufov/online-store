@@ -2,7 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class ProductSearchDto {
+export class ProductSearchByCategoryDto {
   @ApiPropertyOptional({ description: 'Search by product name' })
   @IsOptional()
   @IsString()
@@ -12,12 +12,6 @@ export class ProductSearchDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @ApiPropertyOptional({ description: 'Search by category ID' })
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  category_id?: number;
 
   @ApiPropertyOptional({
     enum: ['cheap', 'expensive', 'most_rated', 'recent_orders'],
@@ -36,7 +30,7 @@ export class ProductSearchDto {
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  attribute_value_id?: number;
+  attribute_value_id?: number; 
 
   @ApiPropertyOptional({
     description: 'Page number for pagination',

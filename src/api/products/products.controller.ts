@@ -29,6 +29,7 @@ import { RolesGuard } from 'src/common/guard/roles.guard';
 import { ProductSearchDto } from './dto/search-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageValidationPipe } from 'src/infrastructure/pipe/image.validation';
+import { ProductSearchByCategoryDto } from './dto/search-product-bycategorty.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -93,7 +94,17 @@ export class ProductsController {
   @ApiResponse({ status: 200, description: 'List of all products' })
   @ApiQuery({ name: 'name', required: false })
   @ApiQuery({ name: 'description', required: false })
-  @ApiQuery({ name: 'category', required: false })
+  @ApiQuery({ name: 'category_id', required: false })
+  @ApiQuery({
+    name: 'attribute_value_id',
+    required: false,
+    description: 'Filter by attribute value ID',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    enum: ['cheap', 'expensive', 'most_rated', 'recent_products'],
+  })
   findAll(@Query() search?: ProductSearchDto) {
     return this.productsService.findAll(search);
   }
@@ -129,16 +140,16 @@ export class ProductsController {
     description: 'Sort products by different criteria',
   })
   @ApiQuery({
-    name: 'name',
+    name: 'attribute_value_id',
     required: false,
-    type: String,
-    description: 'Search by product name',
+    type: Number,
+    description: 'Filter by attribute value ID (e.g., color, size)',
   })
   @ApiQuery({
-    name: 'attribute_value',
+    name: 'attribute_id',
     required: false,
-    type: String,
-    description: 'Search by product variant attribute value',
+    type: Number,
+    description: 'Filter by attribute ID (e.g., color or size attribute)',
   })
   @ApiResponse({
     status: 200,
@@ -150,7 +161,7 @@ export class ProductsController {
   })
   findProductsByCategoryId(
     @Param('categoryId') categoryId: number,
-    @Query() search?: ProductSearchDto,
+    @Query() search?: ProductSearchByCategoryDto,
   ) {
     return this.productsService.findProductsByCategoryId(categoryId, search);
   }

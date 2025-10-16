@@ -9,6 +9,7 @@ import { CategoriesRepo } from 'src/core/repo/categories.repo';
 import { successRes } from 'src/infrastructure/successResponse';
 import { ProductSearchDto } from './dto/search-product.dto';
 import { FileService } from 'src/infrastructure/file/file.service';
+import { ProductSearchByCategoryDto } from './dto/search-product-bycategorty.dto';
 
 @Injectable()
 export class ProductsService {
@@ -75,7 +76,6 @@ export class ProductsService {
         .leftJoinAndSelect('p.reviews', 'reviews')
         .orderBy('p.id', 'ASC');
 
-      // 🔍 Filtering
       if (search?.name) {
         query.andWhere('p.name ILIKE :name', { name: `%${search.name}%` });
       }
@@ -86,17 +86,25 @@ export class ProductsService {
         });
       }
 
-      if (search?.category) {
-        query.andWhere('category.name ILIKE :cat', {
-          cat: `%${search.category}%`,
+      if (search?.category_id) {
+        query.andWhere('category.id = :categoryId', {
+          categoryId: search.category_id,
         });
       }
 
-      if (search?.attribute_value) {
-        query.leftJoin('variant.product_variant_attributes', 'attr');
-        query.leftJoin('attr.product_values', 'value');
-        query.andWhere('value.value ILIKE :attrValue', {
-          attrValue: `%${search.attribute_value}%`,
+      if (search?.attribute_id) {
+        query.leftJoin('variant.product_variant_attributes', 'attr_values');
+        query.leftJoin('attr_values.product_attribute', 'attr');
+        query.andWhere('attr.id = :attributeId', {
+          attributeId: search.attribute_id,
+        });
+      }
+
+      if (search?.attribute_value_id) {
+        query.leftJoin('variant.product_variant_attributes', 'attr_values');
+        query.leftJoin('attr_values.product_values', 'value');
+        query.andWhere('value.id = :attributeValueId', {
+          attributeValueId: search.attribute_value_id,
         });
       }
 
@@ -104,19 +112,15 @@ export class ProductsService {
         case 'cheap':
           query.orderBy('variant.price', 'ASC');
           break;
-
         case 'expensive':
           query.orderBy('variant.price', 'DESC');
           break;
-
         case 'most_rated':
           query.orderBy('p.average_rating', 'DESC');
           break;
-
         case 'recent_products':
           query.orderBy('p.created_at', 'DESC');
           break;
-
         default:
           query.orderBy('p.id', 'ASC');
           break;
@@ -142,7 +146,7 @@ export class ProductsService {
 
   async findProductsByCategoryId(
     category_id: number,
-    search?: ProductSearchDto,
+    search?: ProductSearchByCategoryDto,
   ) {
     try {
       const allCategories = await this.categoryRepo
@@ -159,9 +163,11 @@ export class ProductsService {
         }
         return ids;
       };
+
       const categoryIds = findAllChildIds(Number(category_id))
         .map((id) => Number(id))
         .filter((id) => !isNaN(id));
+
       const page = search?.page || 1;
       const limit = search?.limit || 10;
 
@@ -181,11 +187,19 @@ export class ProductsService {
         });
       }
 
-      if (search?.attribute_value) {
-        query.leftJoin('variant.product_variant_attributes', 'attr');
-        query.leftJoin('attr.product_values', 'value');
-        query.andWhere('value.value ILIKE :attrValue', {
-          attrValue: `%${search.attribute_value}%`,
+      if (search?.attribute_id) {
+        query.leftJoin('variant.product_variant_attributes', 'attr_values');
+        query.leftJoin('attr_values.product_attribute', 'attr');
+        query.andWhere('attr.id = :attributeId', {
+          attributeId: search.attribute_id,
+        });
+      }
+
+      if (search?.attribute_value_id) {
+        query.leftJoin('variant.product_variant_attributes', 'attr_values');
+        query.leftJoin('attr_values.product_values', 'value');
+        query.andWhere('value.id = :attributeValueId', {
+          attributeValueId: search.attribute_value_id,
         });
       }
 
