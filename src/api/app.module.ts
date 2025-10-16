@@ -19,6 +19,8 @@ import { ProductVariantsAttributesModule } from './product_variants_attributes/p
 import config from 'src/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PaymentsModule } from './payments/payments.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { resolve } from 'path';
 
 @Module({
   imports: [
@@ -30,6 +32,10 @@ import { PaymentsModule } from './payments/payments.module';
       entities: ['dist/core/entity/*.entity{.ts,.js}'],
     }),
     JwtModule.register({ global: true }),
+    ServeStaticModule.forRoot({
+      rootPath: resolve(__dirname, '..', '..', '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     CategoriesModule,
     UsersModule,
     ProductsModule,

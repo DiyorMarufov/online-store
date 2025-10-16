@@ -8,6 +8,7 @@ import { errorCatch } from 'src/infrastructure/exception';
 import { ProductsRepo } from 'src/core/repo/products.repo';
 import { successRes } from 'src/infrastructure/successResponse';
 import slugify from 'slugify';
+import { FileService } from 'src/infrastructure/file/file.service';
 
 @Injectable()
 export class ProductVariantsService {
@@ -16,8 +17,12 @@ export class ProductVariantsService {
     private readonly productVariantRepo: ProductVariantsRepo,
     @InjectRepository(ProductsEntity)
     private readonly productRepo: ProductsRepo,
+    private readonly fileService: FileService,
   ) {}
-  async create(createProductVariantDto: CreateProductVariantDto) {
+  async create(
+    createProductVariantDto: CreateProductVariantDto,
+    image?: Express.Multer.File,
+  ) {
     try {
       const existsProduct = await this.productRepo.findOne({
         where: { id: createProductVariantDto.product_id },
@@ -35,9 +40,16 @@ export class ProductVariantsService {
         );
       }
 
+      let variant_img: undefined | string;
+
+      if (image) {
+        variant_img = await this.fileService.createFile(image);
+      }
+
       const newVariant = this.productVariantRepo.create({
         ...createProductVariantDto,
         product: existsProduct,
+        image: variant_img,
       });
       await this.productVariantRepo.save(newVariant);
 

@@ -1,10 +1,21 @@
-import { Controller, Get, Post, Body, UseGuards, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Param,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ProductVariantsService } from './product_variants.service';
 import { CreateProductVariantDto } from './dto/create-product_variant.dto';
@@ -12,6 +23,8 @@ import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ImageValidationPipe } from 'src/infrastructure/pipe/image.validation';
 
 @ApiTags('Product Variants')
 @Controller('product-variants')
@@ -20,12 +33,18 @@ export class ProductVariantsController {
     private readonly productVariantsService: ProductVariantsService,
   ) {}
 
+  @UseInterceptors(FileInterceptor('image'))
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
   @Post()
   @ApiOperation({
     summary: 'Create a new product variant (Admin or Superadmin only)',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Data for creating product variant, including image',
+    type: CreateProductVariantDto,
   })
   @ApiResponse({
     status: 201,
@@ -76,8 +95,11 @@ export class ProductVariantsController {
       },
     },
   })
-  create(@Body() createProductVariantDto: CreateProductVariantDto) {
-    return this.productVariantsService.create(createProductVariantDto);
+  create(
+    @Body() createProductVariantDto: CreateProductVariantDto,
+    @UploadedFile(new ImageValidationPipe()) image?: Express.Multer.File, 
+  ) {
+    return this.productVariantsService.create(createProductVariantDto, image);
   }
 
   @Get()

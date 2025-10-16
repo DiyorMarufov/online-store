@@ -8,6 +8,7 @@ import { CategoriesEntity } from 'src/core/entity/categories.entity';
 import { CategoriesRepo } from 'src/core/repo/categories.repo';
 import { successRes } from 'src/infrastructure/successResponse';
 import { ProductSearchDto } from './dto/search-product.dto';
+import { FileService } from 'src/infrastructure/file/file.service';
 
 @Injectable()
 export class ProductsService {
@@ -16,8 +17,12 @@ export class ProductsService {
     private readonly productRepo: ProductsRepo,
     @InjectRepository(CategoriesEntity)
     private readonly categoryRepo: CategoriesRepo,
+    private readonly fileService: FileService,
   ) {}
-  async create(createProductDto: CreateProductDto) {
+  async create(
+    createProductDto: CreateProductDto,
+    image?: Express.Multer.File,
+  ) {
     try {
       const existsCategory = await this.categoryRepo.findOne({
         where: { id: createProductDto.category_id },
@@ -29,10 +34,16 @@ export class ProductsService {
         );
       }
 
+      let cover_image: undefined | string;
+
+      if (image) {
+        cover_image = await this.fileService.createFile(image);
+      }
+
       const newProduct = this.productRepo.create({
         name: createProductDto.name,
         description: createProductDto.description,
-        image: createProductDto.image,
+        image: cover_image,
         is_active: createProductDto.is_active,
         category: existsCategory,
       });

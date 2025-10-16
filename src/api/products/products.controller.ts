@@ -7,6 +7,8 @@ import {
   Query,
   Param,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -17,23 +19,45 @@ import {
   ApiBearerAuth,
   ApiQuery,
   ApiParam,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
-import { UsersRoles } from 'src/common/enum';
+import { Status, UsersRoles } from 'src/common/enum';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { ProductSearchDto } from './dto/search-product.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ImageValidationPipe } from 'src/infrastructure/pipe/image.validation';
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @UseInterceptors(FileInterceptor('image'))
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
   @Post()
   @ApiOperation({ summary: 'Create a new product' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        category_id: { type: 'number', example: 1 },
+        name: { type: 'string', example: 'iPhone 15 Pro' },
+        description: { type: 'string', example: 'The latest Apple smartphone' },
+        image: {
+          type: 'string',
+          format: 'binary',
+        },
+        is_active: { type: 'enum', example: Status.ACTIVE },
+      },
+      required: ['category_id', 'name', 'description'],
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'Product successfully created',
@@ -48,7 +72,7 @@ export class ProductsController {
           name: 'iPhone 15 Pro',
           description: 'The latest Apple smartphone',
           image: 'https://example.com/images/iphone15.jpg',
-          is_active: 'ACTIVE',
+          is_active: Status.ACTIVE,
         },
       },
     },
@@ -57,8 +81,11 @@ export class ProductsController {
     status: 409,
     description: 'Product with this name already exists',
   })
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  create(
+    @Body() createProductDto: CreateProductDto,
+    @UploadedFile(new ImageValidationPipe()) image?: Express.Multer.File,
+  ) {
+    return this.productsService.create(createProductDto, image);
   }
 
   @Get()

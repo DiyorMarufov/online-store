@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
@@ -14,6 +15,7 @@ export class CreateProductVariantDto {
     type: Number,
   })
   @IsInt()
+  @Type(() => Number)
   @IsNotEmpty()
   product_id: number;
 
@@ -23,6 +25,7 @@ export class CreateProductVariantDto {
     type: Number,
   })
   @IsNumber()
+  @Type(() => Number)
   @IsNotEmpty()
   price: number;
 
@@ -32,16 +35,16 @@ export class CreateProductVariantDto {
     type: Number,
   })
   @IsInt()
+  @Type(() => Number)
   @IsNotEmpty()
   stock: number;
 
   @ApiProperty({
-    description: 'Optional image URL for this product variant',
-    example: 'https://example.com/variant1.png',
+    description: 'Optional image file for this product variant',
     required: false,
-    type: String,
+    type: 'string',
+    format: 'binary',
   })
-  @IsString()
   @IsOptional()
-  image?: string;
+  image?: any;
 }

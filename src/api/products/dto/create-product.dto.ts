@@ -7,6 +7,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Status } from 'src/common/enum';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateProductDto {
   @ApiProperty({
@@ -14,6 +15,7 @@ export class CreateProductDto {
     description: 'The ID of the category the product belongs to',
   })
   @IsInt()
+  @Type(() => Number)
   @IsNotEmpty()
   category_id: number;
 
@@ -34,19 +36,12 @@ export class CreateProductDto {
   description: string;
 
   @ApiPropertyOptional({
-    example: 'https://example.com/images/iphone15.jpg',
-    description: 'Optional image URL for the product',
-  })
-  @IsString()
-  @IsOptional()
-  image?: string;
-
-  @ApiPropertyOptional({
     enum: Status,
     example: Status.ACTIVE,
     description: 'Status of the product (ACTIVE or INACTIVE)',
   })
   @IsEnum(Status)
+  @Transform(({ value }) => value?.toLowerCase())
   @IsOptional()
-  is_active?: Status;
+  is_active?: Status = Status.ACTIVE;
 }
