@@ -7,9 +7,10 @@ import { BcryptService } from 'src/infrastructure/bcrypt';
 import { TokenService } from 'src/infrastructure/jwt';
 import { MailModule } from 'src/infrastructure/mail/mail.module';
 import { CartEntity } from 'src/core/entity/cart.entity';
+import { WalletsEntity } from 'src/core/entity/wallets.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UsersEntity, CartEntity]), MailModule],
+  imports: [TypeOrmModule.forFeature([UsersEntity, CartEntity,WalletsEntity]), MailModule],
   controllers: [UsersController],
   providers: [UsersService, BcryptService, TokenService],
 })

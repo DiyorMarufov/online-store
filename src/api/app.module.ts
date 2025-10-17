@@ -21,6 +21,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PaymentsModule } from './payments/payments.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { resolve } from 'path';
+import { WalletsModule } from './wallets/wallets.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { resolve } from 'path';
     ProductVariantsModule,
     ProductVariantsAttributesModule,
     PaymentsModule,
+    WalletsModule,
   ],
 })
 export class AppModule {}

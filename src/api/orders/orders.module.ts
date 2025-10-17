@@ -3,7 +3,6 @@ import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { TokenService } from 'src/infrastructure/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
 import { OrdersEntity } from 'src/core/entity/orders.entity';
 
 @Module({

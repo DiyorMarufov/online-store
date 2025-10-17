@@ -22,12 +22,15 @@ import { ConfirmOtpDto } from './dto/confirm-otp.dto';
 import { MailService } from 'src/infrastructure/mail/mail.service';
 import { CartEntity } from 'src/core/entity/cart.entity';
 import { CartRepo } from 'src/core/repo/cart.repo';
+import { WalletsEntity } from 'src/core/entity/wallets.entity';
+import { WalletsRepo } from 'src/core/repo/wallets.repo';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UsersEntity) private readonly userRepo: UsersRepo,
     @InjectRepository(CartEntity) private readonly cartRepo: CartRepo,
+    @InjectRepository(WalletsEntity) private readonly walletRepo: WalletsRepo,
     private readonly bcrypt: BcryptService,
     private readonly jwt: TokenService,
     private readonly mailService: MailService,

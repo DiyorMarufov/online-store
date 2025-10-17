@@ -7,6 +7,7 @@ import { CartEntity } from './cart.entity';
 import { OrdersEntity } from './orders.entity';
 import { FavoritesEntity } from './favorites.entity';
 import { ReviewsEntity } from './reviews.entity';
+import { WalletsEntity } from './wallets.entity';
 
 @Entity('users')
 export class UsersEntity extends BaseEntity {
@@ -44,6 +45,9 @@ export class UsersEntity extends BaseEntity {
     nullable: true,
   })
   otp: string;
+
+  @OneToMany(() => WalletsEntity, (wallet) => wallet.user)
+  wallets: WalletsEntity[];
 
   @OneToOne(() => MerchantsEntity, (merchant) => merchant.user)
   merchant: MerchantsEntity;

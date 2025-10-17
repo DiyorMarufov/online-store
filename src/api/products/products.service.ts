@@ -243,7 +243,14 @@ export class ProductsService {
     try {
       const product = await this.productRepo.findOne({
         where: { id },
-        relations: ['category', 'product_variants', 'reviews'],
+        relations: [
+          'category',
+          'product_variants',
+          'product_variants.product_variant_attributes',
+          'product_variants.product_variant_attributes.product_attribute',
+          'product_variants.product_variant_attributes.product_values',
+          'reviews',
+        ],
       });
 
       if (!product) {

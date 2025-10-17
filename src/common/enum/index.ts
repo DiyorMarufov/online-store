@@ -49,3 +49,17 @@ export enum PaymentStatus {
   SUCCESS = 'success',
   CANCELLED = 'cancelled',
 }
+
+export enum WalletCurrencies {
+  USD = 'usd',
+  UZS = 'uzs',
+  RUB = 'rub',
+}
+
+export enum WalletTransactionTypes {
+  DEPOSIT = 'deposit',
+  WITHDRAW = 'withdraw',
+  TRANSFER = 'transfer',
+  PAYMENT = 'payment',
+  REFUND = 'refund',
+}

@@ -18,6 +18,7 @@ import { v4 } from 'uuid';
 import { successRes } from 'src/infrastructure/successResponse';
 import { OrdersRepo } from 'src/core/repo/orders.repo';
 import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
+import { WalletsEntity } from 'src/core/entity/wallets.entity';
 
 @Injectable()
 export class OrdersService {
@@ -98,6 +99,20 @@ export class OrdersService {
 
       await queryRunner.manager.save(OrdersEntity, newOrder);
 
+      const userWallet = await queryRunner.manager.findOne(WalletsEntity, {
+        where: { user: { id: customer_id } },
+      });
+
+      if (!userWallet) {
+        throw new NotFoundException(`User's wallet not found`);
+      }
+
+      if (total_price > userWallet.balance) {
+        throw new BadRequestException(
+          `User's balance not enough for purchasing`,
+        );
+      }
+
       const newPayment = queryRunner.manager.create(PaymentEntity, {
         order: newOrder,
         amount: total_price,
@@ -111,6 +126,16 @@ export class OrdersService {
       if (newPayment.status !== PaymentStatus.SUCCESS) {
         throw new BadRequestException(`Payment failed`);
       }
+
+      const wallet = await queryRunner.manager.findOne(WalletsEntity, {
+        where: { id: userWallet.id },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!wallet) throw new NotFoundException('Wallet not found');
+
+      wallet.balance -= total_price;
+      await queryRunner.manager.save(WalletsEntity, wallet);
 
       for (let item of existsCartItems) {
         if (item.quantity > item.product_variant.stock) {
@@ -130,17 +155,31 @@ export class OrdersService {
       await queryRunner.manager.insert(OrderItemsEntity, newOrderItems);
 
       for (const item of existsCartItems) {
-        const newStock = item.product_variant.stock - item.quantity;
+        const productVariant = await queryRunner.manager.findOne(
+          ProductVariantsEntity,
+          {
+            where: { id: item.product_variant.id },
+            lock: { mode: 'pessimistic_write' },
+          },
+        );
+
+        if (!productVariant) {
+          throw new NotFoundException(
+            `Product variant with ID ${item.product_variant.id} not found`,
+          );
+        }
+
+        const newStock = productVariant.stock - item.quantity;
 
         if (newStock < 0) {
           throw new BadRequestException(
-            `Not enough stock for product_variant ID ${item.product_variant.id}`,
+            `Not enough stock for product_variant ID ${productVariant.id}`,
           );
         }
 
         await queryRunner.manager.update(
           ProductVariantsEntity,
-          { id: item.product_variant.id },
+          { id: productVariant.id },
           { stock: newStock },
         );
       }

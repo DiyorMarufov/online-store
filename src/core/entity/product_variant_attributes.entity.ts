@@ -36,7 +36,7 @@ export class ProductVariantAttributesEntity extends BaseEntity {
     },
   )
   @JoinTable({
-    name: 'product_variant_attribute_values', // or any name you prefer
+    name: 'product_variant_attribute_values',
     joinColumn: { name: 'product_variant_attribute_id' },
     inverseJoinColumn: { name: 'value_id' },
   })
