@@ -27,16 +27,16 @@ export class ReviewsService {
     @InjectRepository(OrderItemsEntity)
     private readonly orderItemRepo: OrderItemsRepo,
   ) {}
-  async create(createReviewDto: CreateReviewDto) {
+  async create(createReviewDto: CreateReviewDto, user: UsersEntity) {
     try {
-      const { customer_id, product_id, rating, comment } = createReviewDto;
+      const { product_id, rating, comment } = createReviewDto;
 
       const existsCustomer = await this.userRepo.findOne({
-        where: { id: customer_id },
+        where: { id: user.id },
       });
 
       if (!existsCustomer) {
-        throw new NotFoundException(`User with ID ${customer_id} not found`);
+        throw new NotFoundException(`User with ID ${user.id} not found`);
       }
 
       if (existsCustomer.role !== UsersRoles.CUSTOMER) {
@@ -56,7 +56,7 @@ export class ReviewsService {
         .innerJoin('order_item.order', 'order')
         .innerJoin('order_item.product_variant', 'product_variant')
         .innerJoin('product_variant.product', 'product')
-        .where('order.customer_id = :customer_id', { customer_id })
+        .where('order.customer_id = :customer_id', { customer_id: user.id })
         .andWhere('product.id = :product_id', { product_id })
         .andWhere('order.status != :status', { status: OrderStatus.CANCELLED })
         .getExists();

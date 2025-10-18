@@ -3,14 +3,6 @@ import { IsInt, IsNotEmpty, IsString, Max, Min } from 'class-validator';
 
 export class CreateReviewDto {
   @ApiProperty({
-    example: 1,
-    description: 'Customer ID who is writing the review',
-  })
-  @IsInt()
-  @IsNotEmpty()
-  customer_id: number;
-
-  @ApiProperty({
     example: 12,
     description: 'Product ID that is being reviewed',
   })

@@ -26,19 +26,18 @@ export class OrdersService {
     @InjectRepository(OrdersEntity) private readonly orderRepo: OrdersRepo,
     private readonly dataSource: DataSource,
   ) {}
-  async create(createOrderDto: CreateOrderDto) {
+  async create(createOrderDto: CreateOrderDto, user: UsersEntity) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      const { customer_id, address_id, cart_items_id, payment_method } =
-        createOrderDto;
+      const { address_id, cart_items_id, payment_method } = createOrderDto;
       const existsUser = await queryRunner.manager.findOne(UsersEntity, {
-        where: { id: customer_id },
+        where: { id: user.id },
       });
 
       if (!existsUser) {
-        throw new NotFoundException(`User with ID ${customer_id} not found`);
+        throw new NotFoundException(`User with ID ${user.id} not found`);
       }
 
       if (existsUser.role !== UsersRoles.CUSTOMER) {
@@ -77,7 +76,7 @@ export class OrdersService {
         }
       }
       const allBelongToUser = existsCartItems.every(
-        (item) => item.cart.customer.id === customer_id,
+        (item) => item.cart.customer.id === user.id,
       );
 
       if (!allBelongToUser) {
@@ -100,7 +99,7 @@ export class OrdersService {
       await queryRunner.manager.save(OrdersEntity, newOrder);
 
       const userWallet = await queryRunner.manager.findOne(WalletsEntity, {
-        where: { user: { id: customer_id } },
+        where: { user: { id: user.id } },
       });
 
       if (!userWallet) {

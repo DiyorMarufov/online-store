@@ -7,6 +7,7 @@ import {
   Delete,
   Param,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -115,6 +116,9 @@ export class CategoriesController {
     return this.categoriesService.findAll();
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
   @Delete(':id')
   @ApiOperation({ summary: 'Delete category by ID' })
   @ApiParam({
@@ -126,12 +130,26 @@ export class CategoriesController {
   @ApiResponse({
     status: 200,
     description: 'Category deleted successfully',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Category deleted successfully',
+        data: null,
+      },
+    },
   })
   @ApiResponse({
     status: 404,
     description: 'Category not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Category with given ID not found',
+        error: 'Not Found',
+      },
+    },
   })
-  delete(@Param('id') id: number) {
+  delete(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.delete(id);
   }
 }

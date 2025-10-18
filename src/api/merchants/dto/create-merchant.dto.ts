@@ -1,12 +1,7 @@
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateMerchantDto {
-  @ApiProperty({ example: 5, description: 'User ID of the merchant' })
-  @IsInt()
-  @IsNotEmpty()
-  user_id: number;
-
   @ApiProperty({ example: 'TechZone', description: 'Store name' })
   @IsString()
   @IsNotEmpty()

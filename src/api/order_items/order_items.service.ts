@@ -1,6 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UsersRoles } from 'src/common/enum';
 import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
+import { UsersEntity } from 'src/core/entity/users.entity';
 import { OrderItemsRepo } from 'src/core/repo/order_items.repo';
 import { errorCatch } from 'src/infrastructure/exception';
 import { successRes } from 'src/infrastructure/successResponse';
@@ -20,7 +26,29 @@ export class OrderItemsService {
     }
   }
 
-  async findOne(id: number) {
-    return `This action returns a #${id} orderItem`;
+  async findOne(id: number, user: UsersEntity) {
+    try {
+      const existsOrderItem = await this.orderItemRepo.findOne({
+        where: { id },
+        relations: ['order', 'order.customer'],
+      });
+
+      if (!existsOrderItem) {
+        throw new NotFoundException(`Order item with ID ${id} not found`);
+      }
+
+      if (
+        user.role === UsersRoles.CUSTOMER &&
+        existsOrderItem.order.customer.id !== user.id
+      ) {
+        throw new ForbiddenException(
+          `You don't have access to this order item`,
+        );
+      }
+
+      return successRes(existsOrderItem);
+    } catch (error) {
+      return errorCatch(error);
+    }
   }
 }

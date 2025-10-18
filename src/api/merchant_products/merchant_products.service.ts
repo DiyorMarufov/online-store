@@ -12,6 +12,7 @@ import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
 import { errorCatch } from 'src/infrastructure/exception';
 import { successRes } from 'src/infrastructure/successResponse';
 import { DataSource } from 'typeorm';
+import { UsersEntity } from 'src/core/entity/users.entity';
 
 @Injectable()
 export class MerchantProductsService {
@@ -20,18 +21,19 @@ export class MerchantProductsService {
     private readonly merchantProductRepo: MerchantProductsRepo,
     private readonly dataSource: DataSource,
   ) {}
-  async create(createMerchantProductDto: CreateMerchantProductDto) {
-    const { merchant_id, product_variant_id, stock, price, is_active } =
+  async create(
+    createMerchantProductDto: CreateMerchantProductDto,
+    user: UsersEntity,
+  ) {
+    const { product_variant_id, stock, price, is_active } =
       createMerchantProductDto;
 
     return await this.dataSource.transaction(async (manager) => {
       const existsMerchant = await manager.findOne(MerchantsEntity, {
-        where: { id: merchant_id },
+        where: { id: user.id },
       });
       if (!existsMerchant)
-        throw new NotFoundException(
-          `Merchant with ID ${merchant_id} not found`,
-        );
+        throw new NotFoundException(`Merchant with ID ${user.id} not found`);
 
       const existsProductVariant = await manager.findOne(
         ProductVariantsEntity,

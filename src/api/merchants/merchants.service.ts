@@ -17,16 +17,14 @@ export class MerchantsService {
     @InjectRepository(UsersEntity)
     private readonly userRepo: UsersRepo,
   ) {}
-  async create(createMerchantDto: CreateMerchantDto) {
+  async create(createMerchantDto: CreateMerchantDto, user: UsersEntity) {
     try {
       const existsMerchant = await this.userRepo.findOne({
-        where: { id: createMerchantDto.user_id, role: UsersRoles.MERCHANT },
+        where: { id: user.id, role: UsersRoles.MERCHANT },
       });
 
       if (!existsMerchant) {
-        throw new NotFoundException(
-          `Merchant with ID ${createMerchantDto.user_id} not found `,
-        );
+        throw new NotFoundException(`Merchant with ID ${user.id} not found `);
       }
 
       const newMerchant = this.merchantRepo.create(createMerchantDto);

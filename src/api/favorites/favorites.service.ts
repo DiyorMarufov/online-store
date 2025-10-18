@@ -25,15 +25,15 @@ export class FavoritesService {
     @InjectRepository(ProductsEntity)
     private readonly productRepo: ProductsRepo,
   ) {}
-  async create(createFavoriteDto: CreateFavoriteDto) {
+  async create(createFavoriteDto: CreateFavoriteDto, user: UsersEntity) {
     try {
-      const { customer_id, product_id } = createFavoriteDto;
+      const { product_id } = createFavoriteDto;
       const existsCustomer = await this.userRepo.findOne({
-        where: { id: customer_id },
+        where: { id: user.id },
       });
 
       if (!existsCustomer) {
-        throw new NotFoundException(`User with ID ${customer_id} not found`);
+        throw new NotFoundException(`User with ID ${user.id} not found`);
       }
 
       if (existsCustomer.role !== UsersRoles.CUSTOMER) {

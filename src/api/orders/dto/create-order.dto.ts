@@ -10,14 +10,6 @@ import { PaymentMethods } from 'src/common/enum';
 
 export class CreateOrderDto {
   @ApiProperty({
-    example: 12,
-    description: 'Customer ID who places the order',
-  })
-  @IsInt()
-  @IsNotEmpty()
-  customer_id: number;
-
-  @ApiProperty({
     example: 5,
     description: 'Address ID where the order will be delivered',
   })

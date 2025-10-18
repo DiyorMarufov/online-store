@@ -19,16 +19,14 @@ export class WalletsService {
     @InjectRepository(WalletsEntity) private readonly walletRepo: WalletsRepo,
     @InjectRepository(UsersEntity) private readonly userRepo: UsersRepo,
   ) {}
-  async create(createWalletDto: CreateWalletDto) {
+  async create(createWalletDto: CreateWalletDto, user: UsersEntity) {
     try {
       const existsUser = await this.userRepo.findOne({
-        where: { id: createWalletDto.user_id },
+        where: { id: user.id },
       });
 
       if (!existsUser) {
-        throw new NotFoundException(
-          `User with ID ${createWalletDto.user_id} not found`,
-        );
+        throw new NotFoundException(`User with ID ${user.id} not found`);
       }
 
       if (

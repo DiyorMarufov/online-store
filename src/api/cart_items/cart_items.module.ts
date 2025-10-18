@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CartItemsEntity } from 'src/core/entity/cart_items.entity';
 import { CartEntity } from 'src/core/entity/cart.entity';
 import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
+import { TokenService } from 'src/infrastructure/jwt';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
     ]),
   ],
   controllers: [CartItemsController],
-  providers: [CartItemsService],
+  providers: [CartItemsService, TokenService],
 })
 export class CartItemsModule {}

@@ -1,8 +1,20 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { CartItemsService } from './cart_items.service';
 import { CreateCartItemDto } from './dto/create-cart_item.dto';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { checkRoles } from 'src/common/decorator/role.decorator';
+import { UsersRoles } from 'src/common/enum';
+import { AuthGuard } from 'src/common/guard/auth.guard';
+import { RolesGuard } from 'src/common/guard/roles.guard';
 
+@ApiTags('Cart Items')
 @Controller('cart-items')
 export class CartItemsController {
   constructor(private readonly cartItemsService: CartItemsService) {}
@@ -10,8 +22,7 @@ export class CartItemsController {
   @Post()
   @ApiOperation({ summary: 'Add a product variant to the cart' })
   @ApiBody({ type: CreateCartItemDto })
-  @ApiResponse({
-    status: 201,
+  @ApiCreatedResponse({
     description: 'The product variant has been added to the cart',
     schema: {
       example: {
@@ -32,10 +43,12 @@ export class CartItemsController {
     return this.cartItemsService.create(createCartItemDto);
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
   @Get()
-  @ApiOperation({ summary: 'Get all cart items' })
-  @ApiResponse({
-    status: 200,
+  @ApiOperation({ summary: 'Get all cart items (Superadmin AND Admin only)' })
+  @ApiOkResponse({
     description: 'List of all cart items',
     schema: {
       example: {

@@ -20,16 +20,14 @@ export class AddressesService {
     @InjectRepository(AddressesEntity)
     private readonly addressRepo: AddressesRepo,
   ) {}
-  async create(createAddressDto: CreateAddressDto) {
+  async create(createAddressDto: CreateAddressDto, user: UsersEntity) {
     try {
       const existsUser = await this.userRepo.findOne({
-        where: { id: createAddressDto.user_id },
+        where: { id: user.id },
       });
 
       if (!existsUser) {
-        throw new NotFoundException(
-          `User with ID ${createAddressDto.user_id} not found`,
-        );
+        throw new NotFoundException(`User with ID ${user.id} not found`);
       }
 
       if (
