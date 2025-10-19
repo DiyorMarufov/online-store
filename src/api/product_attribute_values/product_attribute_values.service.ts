@@ -57,4 +57,74 @@ export class ProductAttributeValuesService {
       return errorCatch(error);
     }
   }
+
+  async update(
+    updateProductAttributeValueDto: UpdateProductAttributeValueDto,
+    id: number,
+  ) {
+    try {
+      const { attribute_id } = updateProductAttributeValueDto;
+      const existsProductAttributeValue =
+        await this.productAttributeValueRepo.findOne({
+          where: { id },
+        });
+
+      if (!existsProductAttributeValue) {
+        throw new NotFoundException(
+          `Product attribute value with ID ${id} not found`,
+        );
+      }
+
+      if (attribute_id) {
+        const existsProductAttribute = await this.productAttributeRepo.findOne({
+          where: { id: attribute_id },
+        });
+
+        if (!existsProductAttribute) {
+          throw new NotFoundException(
+            `Product attribute with ID ${attribute_id} not found`,
+          );
+        }
+
+        await this.productAttributeValueRepo.save({
+          ...existsProductAttributeValue,
+          ...updateProductAttributeValueDto,
+          product_attribute: existsProductAttribute,
+        });
+      } else {
+        await this.productAttributeValueRepo.update(
+          id,
+          updateProductAttributeValueDto,
+        );
+      }
+
+      return successRes(
+        {},
+        200,
+        'Product attribute value successfully updated',
+      );
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async delete(id: number) {
+    try {
+      const existsProductAttributeValue =
+        await this.productAttributeValueRepo.findOne({
+          where: { id },
+        });
+
+      if (!existsProductAttributeValue) {
+        throw new NotFoundException(
+          `Product attribute value with ID ${id} not found`,
+        );
+      }
+
+      await this.productAttributeValueRepo.delete(id);
+      return successRes()
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
 }
