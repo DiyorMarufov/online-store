@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Patch,
+  Param,
+  ParseIntPipe,
+  Delete,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -11,8 +21,9 @@ import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
+import { UpdateProductAttributeDto } from './dto/update-product_attribute.dto';
 
-@ApiTags('Product Attributes') // Swagger bo‘lim nomi
+@ApiTags('Product Attributes')
 @Controller('product-attributes')
 export class ProductAttributesController {
   constructor(
@@ -44,5 +55,44 @@ export class ProductAttributesController {
   })
   findAll() {
     return this.productAttributesService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update product attribute' })
+  @ApiResponse({
+    status: 200,
+    description: 'Product attribute updated successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Product attribute not found.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden. Only ADMIN or SUPERADMIN can update.',
+  })
+  @Patch(':id')
+  update(
+    @Body() updateProductAttributeDto: UpdateProductAttributeDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.productAttributesService.update(updateProductAttributeDto, id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Delete product attribute' })
+  @ApiResponse({
+    status: 200,
+    description: 'Product attribute deleted successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Product attribute not found.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden. Only ADMIN or SUPERADMIN can delete.',
+  })
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.productAttributesService.delete(id);
   }
 }

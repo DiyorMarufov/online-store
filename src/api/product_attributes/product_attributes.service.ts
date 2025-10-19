@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateProductAttributeDto } from './dto/create-product_attribute.dto';
 import { UpdateProductAttributeDto } from './dto/update-product_attribute.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -47,6 +51,47 @@ export class ProductAttributesService {
         relations: ['product_attribute_values'],
       });
       return successRes(allProductAttributes);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async update(
+    updateProductAttributeDto: UpdateProductAttributeDto,
+    id: number,
+  ) {
+    try {
+      const existsProductAttribute = await this.productAttribute.findOne({
+        where: { id },
+      });
+
+      if (!existsProductAttribute) {
+        throw new NotFoundException(
+          `Product attribute with ID ${id} not found`,
+        );
+      }
+
+      await this.productAttribute.update(id, updateProductAttributeDto);
+      return successRes({}, 200, 'Product attribute successfully updated');
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async delete(id: number) {
+    try {
+      const existsProductAttribute = await this.productAttribute.findOne({
+        where: { id },
+      });
+
+      if (!existsProductAttribute) {
+        throw new NotFoundException(
+          `Product attribute with ID ${id} not found`,
+        );
+      }
+
+      await this.productAttribute.delete(id);
+      return successRes();
     } catch (error) {
       return errorCatch(error);
     }
