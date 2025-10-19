@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Payload } from 'src/common/interface';
 import config from 'src/config';
@@ -22,14 +22,34 @@ export class TokenService {
   };
 
   verifyAccessToken = async (accessToken: string) => {
-    return this.jwtService.verifyAsync(accessToken, {
-      secret: config.ACCESS_TOKEN_KEY,
-    });
+    try {
+      return await this.jwtService.verifyAsync(accessToken, {
+        secret: config.ACCESS_TOKEN_KEY,
+      });
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Access token expired');
+      }
+      if (error.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid access token');
+      }
+      throw new UnauthorizedException('Authentication failed');
+    }
   };
 
   verifyRefreshToken = async (refreshToken: string) => {
-    return this.jwtService.verifyAsync(refreshToken, {
-      secret: config.REFRESH_TOKEN_KEY,
-    });
+    try {
+      return this.jwtService.verifyAsync(refreshToken, {
+        secret: config.REFRESH_TOKEN_KEY,
+      });
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Access token expired');
+      }
+      if (error.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid access token');
+      }
+      throw new UnauthorizedException('Authentication failed');
+    }
   };
 }

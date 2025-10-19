@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,6 +16,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiBody,
 } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -22,6 +24,7 @@ import { checkRoles } from 'src/common/decorator/role.decorator';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { UsersRoles } from 'src/common/enum';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -114,6 +117,22 @@ export class CategoriesController {
   })
   findAll() {
     return this.categoriesService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update category by ID' })
+  @ApiResponse({ status: 200, description: 'Category updated successfully' })
+  @ApiResponse({ status: 404, description: 'Category not found' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiBody({ type: UpdateCategoryDto })
+  @Patch(':id')
+  update(
+    @Body() updateCategoryDto: UpdateCategoryDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.categoriesService.update(updateCategoryDto, id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

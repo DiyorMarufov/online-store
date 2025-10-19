@@ -9,6 +9,7 @@ import { CategoriesEntity } from 'src/core/entity/categories.entity';
 import { CategoriesRepo } from 'src/core/repo/categories.repo';
 import { errorCatch } from 'src/infrastructure/exception';
 import { successRes } from 'src/infrastructure/successResponse';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -67,6 +68,38 @@ export class CategoriesService {
         .getMany();
 
       return successRes(categories);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async update(updateCategoryDto: UpdateCategoryDto, id: number) {
+    try {
+      const existsCategory = await this.categoryRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsCategory) {
+        throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+
+      const { parent_id, ...rest } = updateCategoryDto;
+      if (parent_id) {
+        const existsParentCategory = await this.categoryRepo.findOne({
+          where: { id: parent_id },
+        });
+
+        if (!existsParentCategory) {
+          throw new NotFoundException(
+            `Parent category not found with ID ${parent_id}`,
+          );
+        }
+
+        existsCategory.parent = existsParentCategory;
+      }
+      Object.assign(existsCategory, rest);
+      await this.categoryRepo.save(existsCategory);
+      return successRes({}, 200, 'Category updated successfully');
     } catch (error) {
       return errorCatch(error);
     }
