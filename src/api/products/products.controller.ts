@@ -9,6 +9,8 @@ import {
   ParseIntPipe,
   UseInterceptors,
   UploadedFile,
+  Patch,
+  Delete,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -30,6 +32,7 @@ import { ProductSearchDto } from './dto/search-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageValidationPipe } from 'src/infrastructure/pipe/image.validation';
 import { ProductSearchByCategoryDto } from './dto/search-product-bycategorty.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -184,5 +187,38 @@ export class ProductsController {
   })
   findProductById(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.findProductById(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update product by ID' })
+  @ApiResponse({ status: 200, description: 'Product successfully updated.' })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden. Only Admins and Superadmins.',
+  })
+  @Patch(':id')
+  update(
+    @Body() updateProductDto: UpdateProductDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.productsService.update(updateProductDto, id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Delete product by ID' })
+  @ApiResponse({ status: 200, description: 'Product successfully deleted.' })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden. Only Admins and Superadmins.',
+  })
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.delete(id);
   }
 }

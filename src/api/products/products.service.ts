@@ -10,6 +10,7 @@ import { successRes } from 'src/infrastructure/successResponse';
 import { ProductSearchDto } from './dto/search-product.dto';
 import { FileService } from 'src/infrastructure/file/file.service';
 import { ProductSearchByCategoryDto } from './dto/search-product-bycategorty.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
@@ -258,6 +259,60 @@ export class ProductsService {
       }
 
       return successRes(product);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async update(updateProductDto: UpdateProductDto, id: number) {
+    try {
+      const { category_id } = updateProductDto;
+      const existsProduct = await this.productRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsProduct) {
+        throw new NotFoundException(`Product with ID ${id} not found`);
+      }
+
+      if (category_id) {
+        const existsCategory = await this.categoryRepo.findOne({
+          where: { id: category_id },
+        });
+
+        if (!existsCategory) {
+          throw new NotFoundException(
+            `Category with ID ${category_id} not found`,
+          );
+        }
+
+        await this.productRepo.save({
+          ...existsProduct,
+          ...updateProductDto,
+          category: existsCategory,
+        });
+      } else {
+        await this.productRepo.update(id, updateProductDto);
+      }
+
+      return successRes({}, 200, 'Product successfully updated');
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async delete(id: number) {
+    try {
+      const existsProduct = await this.productRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsProduct) {
+        throw new NotFoundException(`Product with ID ${id} not found`);
+      }
+
+      await this.productRepo.delete(id);
+      return successRes();
     } catch (error) {
       return errorCatch(error);
     }
