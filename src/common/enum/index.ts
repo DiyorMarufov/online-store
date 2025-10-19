@@ -5,6 +5,13 @@ export enum UsersRoles {
   CUSTOMER = 'customer',
 }
 
+export enum UserRolesForSignOut {
+  SUPERADMIN = 'Superadmin',
+  ADMIN = 'Admin',
+  MERCHANT = 'Merchant',
+  CUSTOMER = 'Customer',
+}
+
 export enum Status {
   ACTIVE = 'active',
   INACTIVE = 'inactive',

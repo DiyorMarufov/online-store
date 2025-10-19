@@ -1,8 +1,10 @@
 import {
   BadRequestException,
   ConflictException,
-  Inject,
+  ForbiddenException,
   Injectable,
+  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { errorCatch } from 'src/infrastructure/exception';
@@ -24,6 +26,8 @@ import { CartEntity } from 'src/core/entity/cart.entity';
 import { CartRepo } from 'src/core/repo/cart.repo';
 import { WalletsEntity } from 'src/core/entity/wallets.entity';
 import { WalletsRepo } from 'src/core/repo/wallets.repo';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 
 @Injectable()
 export class UsersService {
@@ -249,6 +253,113 @@ export class UsersService {
       }
       writeToCookie(res, refreshToken, `refreshToken${cookieNameRole}`);
       return successRes({ accessToken, refreshToken });
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async signOutUser(refreshToken: string, res: Response, cookieName: string) {
+    try {
+      const decodedToken = await this.jwt.verifyRefreshToken(refreshToken);
+
+      if (!decodedToken) {
+        throw new UnauthorizedException(`Refresh token expired`);
+      }
+
+      const user = await this.userRepo.findOne({
+        where: { id: decodedToken?.id },
+      });
+
+      if (!user) {
+        throw new NotFoundException(
+          `User with ID ${decodedToken.id} not found`,
+        );
+      }
+
+      res.clearCookie(cookieName);
+      return successRes({}, 200, 'User signed out successfully');
+    } catch (error) {
+      console.log(error)
+      return errorCatch(error);
+    }
+  }
+
+  async findAllUsers() {
+    try {
+      const allUsers = await this.userRepo.find();
+      return successRes(allUsers);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async updateUser(updateUserDto: UpdateUserDto, id: number) {
+    try {
+      const { password, ...rest } = updateUserDto;
+
+      const existsUser = await this.userRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsUser) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      let prevPass = existsUser.password;
+      if (password) {
+        prevPass = await this.bcrypt.encrypt(password);
+      }
+
+      await this.userRepo.update(id, {
+        ...rest,
+        password: prevPass,
+      });
+      return successRes({}, 200, 'User successfully updated');
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async updateUserStatus(updateUserStatusDto: UpdateUserStatusDto, id: number) {
+    try {
+      const { status } = updateUserStatusDto;
+      const existsUser = await this.userRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsUser) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      if (existsUser.role === UsersRoles.SUPERADMIN) {
+        throw new ForbiddenException(`Can't update superadmin status`);
+      }
+
+      await this.userRepo.update(id, {
+        status,
+      });
+      return successRes({}, 200, 'User status successfully updated');
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async deleteUser(id: number) {
+    try {
+      const existsUser = await this.userRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsUser) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      if (existsUser.role === UsersRoles.SUPERADMIN) {
+        throw new BadRequestException(`Can't delete superadmin`);
+      }
+
+      await this.userRepo.delete(id);
+      return successRes({}, 200, 'User successfully deleted');
     } catch (error) {
       return errorCatch(error);
     }

@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { HttpStatus, ValidationPipe } from '@nestjs/common';
 import config from 'src/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 
 export default class Application {
   public static async main(): Promise<void> {
@@ -15,6 +16,7 @@ export default class Application {
         errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
       }),
     );
+    app.use(cookieParser());
 
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Online store example')
