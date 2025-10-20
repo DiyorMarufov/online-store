@@ -16,6 +16,8 @@ import { ProductAttributeValuesRepo } from 'src/core/repo/product_attribute_valu
 import { errorCatch } from 'src/infrastructure/exception';
 import { successRes } from 'src/infrastructure/successResponse';
 import slugify from 'slugify';
+import { ProductVariantAttributeValuesEntity } from 'src/core/entity/product_variant_attribute_value.entity';
+import { ProductVariantAttributeValueRepo } from 'src/core/repo/product_variant_attribute_value.repo';
 
 @Injectable()
 export class ProductVariantsAttributesService {
@@ -28,6 +30,8 @@ export class ProductVariantsAttributesService {
     private readonly productAttributeRepo: ProductAttributesRepo,
     @InjectRepository(ProductAttributeValuesEntity)
     private readonly productAttributeValueRepo: ProductAttributeValuesRepo,
+    @InjectRepository(ProductVariantAttributeValuesEntity)
+    private readonly productVariantAttributeValueRepo: ProductVariantAttributeValueRepo,
   ) {}
   async create(createDto: CreateProductVariantsAttributeDto) {
     try {
@@ -37,8 +41,9 @@ export class ProductVariantsAttributesService {
         where: { id: product_variant_id },
         relations: [
           'product_variant_attributes',
-          'product_variant_attributes.product_values',
+          'product_variant_attributes.product_variant_attribute_values',
           'product_variant_attributes.product_attribute',
+          'product_variant_attributes.product_variant_attribute_values.value',
           'product',
         ],
       });
@@ -63,7 +68,11 @@ export class ProductVariantsAttributesService {
         const newVariantAttribute = this.productVariantAttributeRepo.create({
           product_variant: { id: product_variant_id } as any,
           product_attribute: attribute,
-          product_values: [value],
+          product_variant_attribute_values: [
+            this.productVariantAttributeValueRepo.create({
+              value,
+            }),
+          ],
         });
         await this.productVariantAttributeRepo.save(newVariantAttribute);
 
@@ -82,26 +91,29 @@ export class ProductVariantsAttributesService {
         const newVariantAttribute = this.productVariantAttributeRepo.create({
           product_variant: variant,
           product_attribute: attribute,
-          product_values: [value],
+          product_variant_attribute_values: [
+            this.productVariantAttributeValueRepo.create({ value }),
+          ],
         });
 
-        variant.product_variant_attributes.push(newVariantAttribute);
         await this.productVariantAttributeRepo.save(newVariantAttribute);
       } else {
-        const alreadyHasValue = variantAttribute.product_values.some(
-          (v) => v.id === value_id,
-        );
+        const alreadyHasValue =
+          variantAttribute.product_variant_attribute_values.some(
+            (v) => v.value.id === value_id,
+          );
         if (alreadyHasValue) {
           throw new ConflictException(
             `Product variant already has this attribute (${attribute.name}) with this value`,
           );
         }
 
-        await this.productVariantAttributeRepo
-          .createQueryBuilder()
-          .relation(ProductVariantAttributesEntity, 'product_values')
-          .of(variantAttribute.id)
-          .add(value.id);
+        const newVariantAttrValue =
+          this.productVariantAttributeValueRepo.create({
+            product_variant_attribute: variantAttribute,
+            value,
+          });
+        await this.productVariantAttributeValueRepo.save(newVariantAttrValue);
       }
 
       const updatedVariant = await this.productVariantRepo.findOne({
@@ -110,7 +122,8 @@ export class ProductVariantsAttributesService {
           'product',
           'product_variant_attributes',
           'product_variant_attributes.product_attribute',
-          'product_variant_attributes.product_values',
+          'product_variant_attributes.product_variant_attribute_values',
+          'product_variant_attributes.product_variant_attribute_values.value',
         ],
       });
 
@@ -121,7 +134,9 @@ export class ProductVariantsAttributesService {
         });
 
         const attrValues = updatedVariant.product_variant_attributes
-          .flatMap((attr) => attr.product_values.map((v) => v.value))
+          .flatMap((attr) =>
+            attr.product_variant_attribute_values.map((v) => v.value.value),
+          )
           .filter(Boolean);
 
         let finalSlug = baseSlug;
@@ -156,6 +171,7 @@ export class ProductVariantsAttributesService {
       return errorCatch(error);
     }
   }
+
   async findAll() {
     try {
       const allProductVariantAttributes =

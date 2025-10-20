@@ -29,7 +29,7 @@ export class ProductVariantsService {
         relations: [
           'product_variants',
           'product_variants.product_variant_attributes',
-          'product_variants.product_variant_attributes.product_values',
+          'product_variants.product_variant_attributes.product_variant_attribute_values',
           'product_variants.product_variant_attributes.product_attribute',
         ],
       });
@@ -102,7 +102,8 @@ export class ProductVariantsService {
           'product',
           'product_variant_attributes',
           'product_variant_attributes.product_attribute',
-          'product_variant_attributes.product_values',
+          'product_variant_attributes.product_variant_attribute_values',
+          'product_variant_attributes.product_variant_attribute_values.value',
         ],
       });
 
@@ -115,20 +116,14 @@ export class ProductVariantsService {
         product_variant_attributes:
           productVariant.product_variant_attributes.map((attr) => ({
             id: attr.id,
-            created_at: attr.created_at,
-            updated_at: attr.updated_at,
             product_attribute: {
               id: attr.product_attribute.id,
-              created_at: attr.product_attribute.created_at,
-              updated_at: attr.product_attribute.updated_at,
               name: attr.product_attribute.name,
               type: attr.product_attribute.type,
-              product_values: attr.product_values.map((v) => ({
-                id: v.id,
-                created_at: v.created_at,
-                updated_at: v.updated_at,
-                value: v.value,
-              })),
+              product_attribute_values:
+                attr.product_variant_attribute_values.map((v) => ({
+                  value: v.value,
+                })),
             },
           })),
       };

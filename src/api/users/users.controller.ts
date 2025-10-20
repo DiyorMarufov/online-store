@@ -23,35 +23,58 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SignInUserDto } from './dto/sign-in.dto';
 import { Response } from 'express';
-import { Status, UserRolesForSignOut, UsersRoles } from 'src/common/enum';
+import { UserRolesForSignOut, UsersRoles } from 'src/common/enum';
 import { ConfirmOtpDto } from './dto/confirm-otp.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CurrentUser } from 'src/common/decorator/current-user.decorator';
-import { UsersEntity } from 'src/core/entity/users.entity';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { UserGuard } from 'src/common/guard/self.guard';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
-import { GetCookie } from 'src/common/decorator/get-cookie.decorator';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN)
+  @ApiBearerAuth('access-token')
   @Post('admin')
   @ApiOperation({ summary: 'Create a new admin user' })
-  @ApiBody({ type: CreateUserDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        full_name: { type: 'string', example: 'admin123' },
+        email: { type: 'string', example: 'admin@example.com' },
+        password: { type: 'string', example: 'strongPassword123' },
+      },
+      required: ['full_name', 'email', 'password'],
+    },
+  })
   @ApiResponse({ status: 201, description: 'Admin user successfully created' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   createAdmin(@Body() createUserDto: CreateUserDto) {
     return this.usersService.createUserByRole(createUserDto, UsersRoles.ADMIN);
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
   @Post('merchant')
   @ApiOperation({ summary: 'Create a new merchant user' })
-  @ApiBody({ type: CreateUserDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        full_name: { type: 'string', example: 'merchant123' },
+        email: { type: 'string', example: 'merchant@example.com' },
+        password: { type: 'string', example: 'strongPassword123' },
+      },
+      required: ['full_name', 'email', 'password'],
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'Merchant user successfully created',

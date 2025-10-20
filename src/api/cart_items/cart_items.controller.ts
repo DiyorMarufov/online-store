@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Patch,
+  Delete,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { CartItemsService } from './cart_items.service';
 import { CreateCartItemDto } from './dto/create-cart_item.dto';
 import {
@@ -8,17 +18,24 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiTags,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
+import { UpdateCartItemDto } from './dto/update-cart_item.dto';
+import { CurrentUser } from 'src/common/decorator/current-user.decorator';
+import { UsersEntity } from 'src/core/entity/users.entity';
 
 @ApiTags('Cart Items')
 @Controller('cart-items')
 export class CartItemsController {
   constructor(private readonly cartItemsService: CartItemsService) {}
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
   @Post()
   @ApiOperation({ summary: 'Add a product variant to the cart' })
   @ApiBody({ type: CreateCartItemDto })
@@ -39,8 +56,11 @@ export class CartItemsController {
       },
     },
   })
-  create(@Body() createCartItemDto: CreateCartItemDto) {
-    return this.cartItemsService.create(createCartItemDto);
+  create(
+    @Body() createCartItemDto: CreateCartItemDto,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.cartItemsService.create(createCartItemDto, user);
   }
 
   @UseGuards(AuthGuard, RolesGuard)
@@ -77,5 +97,52 @@ export class CartItemsController {
   })
   findAll() {
     return this.cartItemsService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get a cart item by ID' })
+  @ApiResponse({ status: 200, description: 'Cart item retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Cart item not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @Get(':id')
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.cartItemsService.findOne(id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update a cart item (quantity only)' })
+  @ApiResponse({ status: 200, description: 'Cart item updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid update request' })
+  @ApiResponse({ status: 404, description: 'Cart item not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @Patch(':id')
+  update(
+    @Body() updateCartItemDto: UpdateCartItemDto,
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.cartItemsService.update(updateCartItemDto, id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Delete a cart item by ID' })
+  @ApiResponse({ status: 200, description: 'Cart item deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Cart item not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @Delete(':id')
+  delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.cartItemsService.delete(id, user);
   }
 }
