@@ -1,4 +1,14 @@
-import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { MerchantsService } from './merchants.service';
 import { CreateMerchantDto } from './dto/create-merchant.dto';
 import {
@@ -9,6 +19,10 @@ import {
   ApiConflictResponse,
   ApiOkResponse,
   ApiBody,
+  ApiConsumes,
+  ApiNotFoundResponse,
+  ApiForbiddenResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
@@ -16,12 +30,15 @@ import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ImageValidationPipe } from 'src/infrastructure/pipe/image.validation';
 
 @ApiTags('Merchants')
 @Controller('merchants')
 export class MerchantsController {
   constructor(private readonly merchantsService: MerchantsService) {}
 
+  @UseInterceptors(FileInterceptor('image'))
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
   @ApiBearerAuth('access-token')
@@ -29,7 +46,23 @@ export class MerchantsController {
   @ApiOperation({
     summary: 'Create a new merchant (Admin, SuperAdmin, Merchant)',
   })
-  @ApiBody({ type: CreateMerchantDto })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        store_name: { type: 'string', example: 'TechZone' },
+        store_description: {
+          type: 'string',
+          example: 'Electronics and gadgets store',
+        },
+        image: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   @ApiCreatedResponse({
     description: 'Merchant successfully created',
     schema: {
@@ -39,7 +72,6 @@ export class MerchantsController {
         message: 'Merchant created successfully',
         data: {
           id: 1,
-          user_id: 5,
           store_name: 'TechZone',
           store_logo: 'uploads/logo.png',
           store_description: 'Electronics and gadgets store',
@@ -60,12 +92,16 @@ export class MerchantsController {
   create(
     @Body() createMerchantDto: CreateMerchantDto,
     @CurrentUser() user: UsersEntity,
+    @UploadedFile(new ImageValidationPipe()) image?: Express.Multer.File,
   ) {
-    return this.merchantsService.create(createMerchantDto, user);
+    return this.merchantsService.create(createMerchantDto, user, image);
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
   @Get()
-  @ApiOperation({ summary: 'Get all merchants' })
+  @ApiOperation({ summary: 'Get all merchants (Admin, SuperAdmin)' })
   @ApiOkResponse({
     description: 'List of all merchants',
     schema: {
@@ -75,14 +111,22 @@ export class MerchantsController {
         data: [
           {
             id: 1,
-            user_id: 5,
+            user: {
+              id: 5,
+              full_name: 'John Doe',
+              email: 'john@example.com',
+            },
             store_name: 'TechZone',
             store_logo: 'uploads/logo.png',
             store_description: 'Electronics and gadgets store',
           },
           {
             id: 2,
-            user_id: 6,
+            user: {
+              id: 6,
+              full_name: 'Jane Smith',
+              email: 'jane@example.com',
+            },
             store_name: 'BookWorld',
             store_logo: 'uploads/logo2.png',
             store_description: 'Books and stationery store',
@@ -91,7 +135,77 @@ export class MerchantsController {
       },
     },
   })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - not allowed to access merchants list',
+    schema: {
+      example: {
+        statusCode: 403,
+        message:
+          'Access denied: only Admins, SuperAdmins can view merchants list',
+        error: 'Forbidden',
+      },
+    },
+  })
   findAll() {
     return this.merchantsService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get merchant by ID (Admin, SuperAdmin, Merchant)' })
+  @ApiParam({ name: 'id', type: Number, description: 'Merchant ID' })
+  @ApiOkResponse({
+    description: 'Merchant found successfully',
+    schema: {
+      example: {
+        success: true,
+        statusCode: 200,
+        data: {
+          id: 1,
+          store_name: 'TechZone',
+          store_description: 'Electronics and gadgets store',
+          user: {
+            id: 5,
+            full_name: 'John Doe',
+            email: 'john@example.com',
+          },
+          merchant_products: [
+            {
+              id: 10,
+              product_name: 'Laptop',
+              price: 1200,
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Merchant not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Merchant with ID 1 not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - not allowed to access this merchant',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Access denied: you can only access your own merchant account',
+        error: 'Forbidden',
+      },
+    },
+  })
+  @Get(':id')
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.merchantsService.findOne(id, user);
   }
 }

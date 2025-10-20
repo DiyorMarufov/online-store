@@ -4,9 +4,12 @@ import { MerchantProductsController } from './merchant_products.controller';
 import { MerchantProductsEntity } from 'src/core/entity/merchant_products.entity';
 import { TokenService } from 'src/infrastructure/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MerchantProductsEntity])],
+  imports: [
+    TypeOrmModule.forFeature([MerchantProductsEntity, ProductVariantsEntity]),
+  ],
   controllers: [MerchantProductsController],
   providers: [MerchantProductsService, TokenService],
 })

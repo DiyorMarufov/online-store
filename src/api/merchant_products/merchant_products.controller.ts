@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  ParseIntPipe,
+  Param,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { MerchantProductsService } from './merchant_products.service';
 import { CreateMerchantProductDto } from './dto/create-merchant_product.dto';
 import { checkRoles } from 'src/common/decorator/role.decorator';
@@ -13,9 +23,12 @@ import {
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiBody,
+  ApiParam,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
+import { UpdateMerchantProductDto } from './dto/update-merchant_product.dto';
 
 @ApiTags('Merchant Products')
 @Controller('merchant-products')
@@ -95,5 +108,55 @@ export class MerchantProductsController {
   })
   findAll() {
     return this.merchantProductsService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get merchant product by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Merchant product ID' })
+  @ApiOkResponse({ description: 'Merchant product found successfully' })
+  @ApiNotFoundResponse({ description: 'Merchant product not found' })
+  @Get(':id')
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.merchantProductsService.findOne(id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update merchant product' })
+  @ApiParam({ name: 'id', type: Number, description: 'Merchant product ID' })
+  @ApiOkResponse({ description: 'Merchant product updated successfully' })
+  @ApiNotFoundResponse({ description: 'Merchant product not found' })
+  @Patch(':id')
+  update(
+    @Body() updateMerchantProductDto: UpdateMerchantProductDto,
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.merchantProductsService.update(
+      updateMerchantProductDto,
+      id,
+      user,
+    );
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Delete merchant product' })
+  @ApiParam({ name: 'id', type: Number, description: 'Merchant product ID' })
+  @ApiOkResponse({ description: 'Merchant product deleted successfully' })
+  @ApiNotFoundResponse({ description: 'Merchant product not found' })
+  @Delete(':id')
+  delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.merchantProductsService.delete(id, user);
   }
 }

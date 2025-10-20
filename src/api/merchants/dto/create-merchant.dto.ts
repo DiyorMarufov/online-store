@@ -8,14 +8,6 @@ export class CreateMerchantDto {
   store_name: string;
 
   @ApiProperty({
-    example: 'uploads/logo.png',
-    description: 'Store logo image path',
-  })
-  @IsString()
-  @IsNotEmpty()
-  store_logo: string;
-
-  @ApiProperty({
     example: 'Electronics and gadgets store',
     description: 'Store description',
   })
