@@ -18,6 +18,9 @@ import { successRes } from 'src/infrastructure/successResponse';
 import slugify from 'slugify';
 import { ProductVariantAttributeValuesEntity } from 'src/core/entity/product_variant_attribute_value.entity';
 import { ProductVariantAttributeValueRepo } from 'src/core/repo/product_variant_attribute_value.repo';
+import { ProductsRepo } from 'src/core/repo/products.repo';
+import { ProductsEntity } from 'src/core/entity/products.entity';
+import { index } from 'src/infrastructure/meili-search/meili.search';
 
 @Injectable()
 export class ProductVariantsAttributesService {
@@ -32,6 +35,8 @@ export class ProductVariantsAttributesService {
     private readonly productAttributeValueRepo: ProductAttributeValuesRepo,
     @InjectRepository(ProductVariantAttributeValuesEntity)
     private readonly productVariantAttributeValueRepo: ProductVariantAttributeValueRepo,
+    @InjectRepository(ProductsEntity)
+    private readonly productRepo: ProductsRepo,
   ) {}
   async create(createDto: CreateProductVariantsAttributeDto) {
     try {
@@ -162,6 +167,41 @@ export class ProductVariantsAttributesService {
         await this.productVariantRepo.save(updatedVariant);
       }
 
+      if (updatedVariant) {
+        const product = updatedVariant.product;
+        const fullProduct = await this.productRepo.findOne({
+          where: { id: product.id },
+          relations: [
+            'category',
+            'product_variants',
+            'product_variants.product_variant_attributes',
+            'product_variants.product_variant_attributes.product_attribute',
+            'product_variants.product_variant_attributes.product_variant_attribute_values',
+            'product_variants.product_variant_attributes.product_variant_attribute_values.value',
+          ],
+        });
+
+        const productForMeili = {
+          id: fullProduct?.id,
+          name: fullProduct?.name,
+          description: fullProduct?.description,
+          image: fullProduct?.image,
+          is_active: fullProduct?.is_active,
+          average_rating: fullProduct?.average_rating,
+          category_id: fullProduct?.category.id,
+          attribute_id: fullProduct?.product_variants.flatMap((v) =>
+            v.product_variant_attributes.map((a) => a.product_attribute.id),
+          ),
+          attribute_value_id: fullProduct?.product_variants.flatMap((v) =>
+            v.product_variant_attributes.flatMap((a) =>
+              a.product_variant_attribute_values.map((val) => val.value.id),
+            ),
+          ),
+          created_at: fullProduct?.created_at,
+        };
+
+        await index.addDocuments([productForMeili]);
+      }
       return successRes(
         { product_variant_id, attribute_id, value_id },
         200,

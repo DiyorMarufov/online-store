@@ -8,6 +8,7 @@ import { ProductAttributeValuesEntity } from 'src/core/entity/product_attribute_
 import { ProductVariantAttributesEntity } from 'src/core/entity/product_variant_attributes.entity';
 import { TokenService } from 'src/infrastructure/jwt';
 import { ProductVariantAttributeValuesEntity } from 'src/core/entity/product_variant_attribute_value.entity';
+import { ProductsEntity } from 'src/core/entity/products.entity';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ProductVariantAttributeValuesEntity } from 'src/core/entity/product_var
       ProductAttributeValuesEntity,
       ProductVariantAttributesEntity,
       ProductVariantAttributeValuesEntity,
+      ProductsEntity,
     ]),
   ],
   controllers: [ProductVariantsAttributesController],

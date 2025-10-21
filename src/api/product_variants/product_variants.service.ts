@@ -9,6 +9,7 @@ import { ProductsRepo } from 'src/core/repo/products.repo';
 import { successRes } from 'src/infrastructure/successResponse';
 import slugify from 'slugify';
 import { FileService } from 'src/infrastructure/file/file.service';
+import { index } from 'src/infrastructure/meili-search/meili.search';
 
 @Injectable()
 export class ProductVariantsService {
@@ -66,6 +67,44 @@ export class ProductVariantsService {
       newVariant.slug = uniqueSlug;
       await this.productVariantRepo.save(newVariant);
 
+      const fullProduct = await this.productRepo.findOne({
+        where: { id: existsProduct.id },
+        relations: [
+          'category',
+          'product_variants',
+          'product_variants.product_variant_attributes',
+          'product_variants.product_variant_attributes.product_attribute',
+          'product_variants.product_variant_attributes.product_variant_attribute_values',
+          'product_variants.product_variant_attributes.product_variant_attribute_values.value',
+        ],
+      });
+
+      if (!fullProduct) {
+        throw new Error('Product not found');
+      }
+
+      const firstVariant = fullProduct.product_variants?.[0];
+
+      const productForMeili = {
+        id: fullProduct.id,
+        name: fullProduct.name,
+        description: fullProduct.description,
+        image: fullProduct.image,
+        is_active: fullProduct.is_active,
+        average_rating: fullProduct.average_rating,
+        category_id: fullProduct.category?.id,
+        attribute_id: fullProduct.product_variants.flatMap((v) =>
+          v.product_variant_attributes.map((a) => a.product_attribute.id),
+        ),
+        attribute_value_id: fullProduct.product_variants.flatMap((v) =>
+          v.product_variant_attributes.flatMap((a) =>
+            a.product_variant_attribute_values.map((val) => val.value.id),
+          ),
+        ),
+        created_at: fullProduct.created_at,
+        price: firstVariant ? firstVariant.price : 0,
+      };
+      await index.addDocuments([productForMeili]);
       return successRes(
         {
           product_id: newVariant.product.id,

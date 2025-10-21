@@ -11,6 +11,7 @@ import { ProductSearchDto } from './dto/search-product.dto';
 import { FileService } from 'src/infrastructure/file/file.service';
 import { ProductSearchByCategoryDto } from './dto/search-product-bycategorty.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { index } from 'src/infrastructure/meili-search/meili.search';
 
 @Injectable()
 export class ProductsService {
@@ -21,6 +22,7 @@ export class ProductsService {
     private readonly categoryRepo: CategoriesRepo,
     private readonly fileService: FileService,
   ) {}
+
   async create(
     createProductDto: CreateProductDto,
     image?: Express.Multer.File,
@@ -50,6 +52,7 @@ export class ProductsService {
         category: existsCategory,
       });
       await this.productRepo.save(newProduct);
+      await index.addDocuments([newProduct]);
       return successRes(
         {
           name: newProduct.name,
@@ -70,74 +73,50 @@ export class ProductsService {
       const page = search?.page || 1;
       const limit = search?.limit || 10;
 
-      const query = this.productRepo
-        .createQueryBuilder('p')
-        .leftJoinAndSelect('p.category', 'category')
-        .leftJoinAndSelect('p.product_variants', 'variant')
-        .leftJoinAndSelect('p.reviews', 'reviews')
-        .orderBy('p.id', 'ASC');
-
-      if (search?.name) {
-        query.andWhere('p.name ILIKE :name', { name: `%${search.name}%` });
-      }
-
-      if (search?.description) {
-        query.andWhere('p.description ILIKE :desc', {
-          desc: `%${search.description}%`,
-        });
-      }
+      const meiliQuery = search?.name || '';
+      const filter: string[] = [];
 
       if (search?.category_id) {
-        query.andWhere('category.id = :categoryId', {
-          categoryId: search.category_id,
-        });
+        filter.push(`category_id = ${search.category_id}`);
       }
 
       if (search?.attribute_id) {
-        query.leftJoin('variant.product_variant_attributes', 'attr_values');
-        query.leftJoin('attr_values.product_attribute', 'attr');
-        query.andWhere('attr.id = :attributeId', {
-          attributeId: search.attribute_id,
-        });
+        filter.push(`attribute_id = ${search.attribute_id}`);
       }
 
       if (search?.attribute_value_id) {
-        query.leftJoin('variant.product_variant_attributes', 'attr_values');
-        query.leftJoin('attr_values.product_values', 'value');
-        query.andWhere('value.id = :attributeValueId', {
-          attributeValueId: search.attribute_value_id,
-        });
+        filter.push(`attribute_value_id = ${search.attribute_value_id}`);
       }
 
+      let sort: string[] = [];
       switch (search?.sort) {
         case 'cheap':
-          query.orderBy('variant.price', 'ASC');
+          sort = ['price:asc'];
           break;
         case 'expensive':
-          query.orderBy('variant.price', 'DESC');
+          sort = ['price:desc'];
           break;
         case 'most_rated':
-          query.orderBy('p.average_rating', 'DESC');
+          sort = ['average_rating:desc'];
           break;
         case 'recent_products':
-          query.orderBy('p.created_at', 'DESC');
-          break;
-        default:
-          query.orderBy('p.id', 'ASC');
+          sort = ['created_at:desc'];
           break;
       }
 
-      query.skip((page - 1) * limit).take(limit);
-
-      const [products, total] = await query.getManyAndCount();
-
+      const results = await index.search(meiliQuery, {
+        limit,
+        offset: (page - 1) * limit,
+        filter: filter.length ? filter : undefined,
+        sort: sort.length ? sort : undefined,
+      });
       return successRes({
-        data: products,
+        data: results.hits,
         meta: {
-          total,
+          total: results.estimatedTotalHits,
           page,
           limit,
-          last_page: Math.ceil(total / limit),
+          last_page: Math.ceil(results.estimatedTotalHits / limit),
         },
       });
     } catch (error) {
@@ -266,34 +245,36 @@ export class ProductsService {
 
   async update(updateProductDto: UpdateProductDto, id: number) {
     try {
-      const { category_id } = updateProductDto;
       const existsProduct = await this.productRepo.findOne({
         where: { id },
+        relations: ['category'],
       });
 
       if (!existsProduct) {
         throw new NotFoundException(`Product with ID ${id} not found`);
       }
 
-      if (category_id) {
+      let category = existsProduct.category;
+
+      if (updateProductDto.category_id) {
         const existsCategory = await this.categoryRepo.findOne({
-          where: { id: category_id },
+          where: { id: updateProductDto.category_id },
         });
 
         if (!existsCategory) {
           throw new NotFoundException(
-            `Category with ID ${category_id} not found`,
+            `Category with ID ${updateProductDto.category_id} not found`,
           );
         }
 
-        await this.productRepo.save({
-          ...existsProduct,
-          ...updateProductDto,
-          category: existsCategory,
-        });
-      } else {
-        await this.productRepo.update(id, updateProductDto);
+        category = existsCategory;
       }
+
+      await this.productRepo.save({
+        ...existsProduct,
+        ...updateProductDto,
+        category,
+      });
 
       return successRes({}, 200, 'Product successfully updated');
     } catch (error) {

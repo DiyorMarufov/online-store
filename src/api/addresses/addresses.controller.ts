@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { AddressesService } from './addresses.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import {
@@ -14,15 +24,16 @@ import { RolesGuard } from 'src/common/guard/roles.guard';
 import { UsersRoles } from 'src/common/enum';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
+import { UpdateAddressDto } from './dto/update-address.dto';
 
 @ApiTags('Addresses')
+@ApiBearerAuth('access-token')
 @Controller('addresses')
 export class AddressesController {
   constructor(private readonly addressesService: AddressesService) {}
 
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.CUSTOMER, UsersRoles.MERCHANT)
-  @ApiBearerAuth('access-token')
   @Post()
   @ApiOperation({ summary: 'Create a new address' })
   @ApiBody({ type: CreateAddressDto })
@@ -76,7 +87,6 @@ export class AddressesController {
 
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
-  @ApiBearerAuth('access-token')
   @Get()
   @ApiOperation({ summary: 'Get all addresses' })
   @ApiResponse({
@@ -122,5 +132,126 @@ export class AddressesController {
   })
   findAll() {
     return this.addressesService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @Get(':id')
+  @ApiOperation({ summary: 'Get address by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Address retrieved successfully',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Address retrieved successfully',
+        data: {
+          id: 1,
+          street: '123 Main St',
+          city: 'Tashkent',
+          postal_code: '100000',
+          country: 'Uzbekistan',
+          type: 'SHIPPING',
+          user: {
+            id: 5,
+            full_name: 'John Doe',
+            email: 'john@example.com',
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Address not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Address with ID 1 not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.addressesService.findOne(id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update address by ID' })
+  @ApiBody({ type: UpdateAddressDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Address updated successfully',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Address updated successfully',
+        data: {
+          id: 1,
+          street: '456 New St',
+          city: 'Tashkent',
+          postal_code: '100001',
+          country: 'Uzbekistan',
+          type: 'BILLING',
+          user_id: 5,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Address not found',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  update(
+    @Body() updateAddressDto: UpdateAddressDto,
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.addressesService.update(updateAddressDto, id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete address by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Address deleted successfully',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Address deleted successfully',
+        data: {
+          id: 1,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Address not found',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.addressesService.delete(id, user);
   }
 }

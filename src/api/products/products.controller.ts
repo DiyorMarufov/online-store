@@ -23,6 +23,7 @@ import {
   ApiParam,
   ApiConsumes,
   ApiBody,
+  ApiHeader,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { Status, UsersRoles } from 'src/common/enum';

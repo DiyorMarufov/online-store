@@ -22,6 +22,10 @@ import { PaymentsModule } from './payments/payments.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { resolve } from 'path';
 import { WalletsModule } from './wallets/wallets.module';
+import { ProductSeeder } from 'src/seeds/product.seed';
+import { ProductsEntity } from 'src/core/entity/products.entity';
+import { CategoriesEntity } from 'src/core/entity/categories.entity';
+import { InfrastructureModule } from 'src/infrastructure/meili-search/meili.module';
 
 @Module({
   imports: [
@@ -55,6 +59,9 @@ import { WalletsModule } from './wallets/wallets.module';
     ProductVariantsAttributesModule,
     PaymentsModule,
     WalletsModule,
+    TypeOrmModule.forFeature([ProductsEntity, CategoriesEntity]),
+    InfrastructureModule
   ],
+  providers: [ProductSeeder],
 })
 export class AppModule {}
