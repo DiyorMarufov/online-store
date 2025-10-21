@@ -13,18 +13,19 @@ export class ImageValidationPipe implements PipeTransform {
     '.webp',
   ];
 
-  transform(value: any, _: any) {
+  transform(value: any) {
     try {
-      if (value) {
-        const file = value.originalname;
-        const ext = extname(file).toLowerCase();
-        if (!this.allowedExt.includes(ext)) {
-          throw new BadRequestException(
-            `Only allowed files: ${this.allowedExt.join('. ')}`,
-          );
+      if (value?.length) {
+        for (const file of value) {
+          const ext = extname(file?.originalname).toLowerCase();
+          if (!this.allowedExt.includes(ext)) {
+            throw new BadRequestException(
+              `Only allowed files: ${this.allowedExt.join('. ')}`,
+            );
+          }
         }
-        return value;
       }
+      return value;
     } catch (e) {
       return errorCatch(e);
     }

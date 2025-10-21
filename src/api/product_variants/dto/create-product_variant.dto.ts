@@ -32,13 +32,4 @@ export class CreateProductVariantDto {
   @Type(() => Number)
   @IsNotEmpty()
   stock: number;
-
-  @ApiProperty({
-    description: 'Optional image file for this product variant',
-    required: false,
-    type: 'string',
-    format: 'binary',
-  })
-  @IsOptional()
-  image?: any;
 }

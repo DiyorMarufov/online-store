@@ -5,6 +5,7 @@ import { OrderItemsEntity } from './order_items.entity';
 import { MerchantProductsEntity } from './merchant_products.entity';
 import { CartItemsEntity } from './cart_items.entity';
 import { ProductVariantAttributesEntity } from './product_variant_attributes.entity';
+import { ProductVariantImagesEntity } from './product_variant_images.entity';
 
 @Entity('product_variants')
 export class ProductVariantsEntity extends BaseEntity {
@@ -30,9 +31,6 @@ export class ProductVariantsEntity extends BaseEntity {
   @Column({ type: 'int', name: 'stock', unsigned: true })
   stock: number;
 
-  @Column({ type: 'varchar', name: 'image', nullable: true })
-  image?: string;
-
   @Column({ type: 'varchar', name: 'slug', unique: true, nullable: true })
   slug: string;
 
@@ -53,4 +51,10 @@ export class ProductVariantsEntity extends BaseEntity {
     (productVariantAttribute) => productVariantAttribute.product_variant,
   )
   product_variant_attributes: ProductVariantAttributesEntity[];
+
+  @OneToMany(
+    () => ProductVariantImagesEntity,
+    (productVariantImage) => productVariantImage.product_variant,
+  )
+  images: ProductVariantImagesEntity[];
 }

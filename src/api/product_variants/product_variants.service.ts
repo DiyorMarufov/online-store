@@ -10,6 +10,8 @@ import { successRes } from 'src/infrastructure/successResponse';
 import slugify from 'slugify';
 import { FileService } from 'src/infrastructure/file/file.service';
 import { index } from 'src/infrastructure/meili-search/meili.search';
+import { ProductVariantImagesEntity } from 'src/core/entity/product_variant_images.entity';
+import { ProductVariantImagesRepo } from 'src/core/repo/product_variant_images.repo';
 
 @Injectable()
 export class ProductVariantsService {
@@ -18,11 +20,13 @@ export class ProductVariantsService {
     private readonly productVariantRepo: ProductVariantsRepo,
     @InjectRepository(ProductsEntity)
     private readonly productRepo: ProductsRepo,
+    @InjectRepository(ProductVariantImagesEntity)
+    private readonly productVariantImageRepo: ProductVariantImagesRepo,
     private readonly fileService: FileService,
   ) {}
   async create(
     createProductVariantDto: CreateProductVariantDto,
-    image?: Express.Multer.File,
+    images?: Express.Multer.File[],
   ) {
     try {
       const existsProduct = await this.productRepo.findOne({
@@ -41,18 +45,33 @@ export class ProductVariantsService {
         );
       }
 
-      let variant_img: undefined | string;
+      const variant_imgs: string[] = [];
 
-      if (image) {
-        variant_img = await this.fileService.createFile(image);
+      if (images?.length) {
+        for (const img of images) {
+          const savedImage = await this.fileService.createFile(img);
+          variant_imgs.push(savedImage);
+        }
       }
 
       const newVariant = this.productVariantRepo.create({
         ...createProductVariantDto,
         product: existsProduct,
-        image: variant_img,
       });
       await this.productVariantRepo.save(newVariant);
+
+      if (variant_imgs.length) {
+        const variantImageEntities = variant_imgs.map((imgUrl) =>
+          this.productVariantImageRepo.create({
+            product_variant: newVariant,
+            image: imgUrl,
+          }),
+        );
+
+        await this.productVariantImageRepo.save(variantImageEntities);
+        newVariant.images = variantImageEntities;
+        await this.productVariantRepo.save(newVariant);
+      }
 
       let baseSlug = slugify(existsProduct.name, { lower: true, strict: true });
 
@@ -110,7 +129,6 @@ export class ProductVariantsService {
           product_id: newVariant.product.id,
           price: newVariant.price,
           stock: newVariant.stock,
-          image: newVariant.image,
           slug: newVariant.slug,
         },
         201,
@@ -135,16 +153,47 @@ export class ProductVariantsService {
 
   async findOne(id: number) {
     try {
-      const productVariant = await this.productVariantRepo.findOne({
-        where: { id },
-        relations: [
-          'product',
+      const productVariant = await this.productVariantRepo
+        .createQueryBuilder('product_variant')
+        .leftJoinAndSelect('product_variant.product', 'product')
+        .leftJoinAndSelect(
+          'product_variant.product_variant_attributes',
           'product_variant_attributes',
+        )
+        .leftJoinAndSelect(
           'product_variant_attributes.product_attribute',
+          'product_attribute',
+        )
+        .leftJoinAndSelect(
           'product_variant_attributes.product_variant_attribute_values',
-          'product_variant_attributes.product_variant_attribute_values.value',
-        ],
-      });
+          'product_variant_attribute_values',
+        )
+        .leftJoinAndSelect('product_variant_attribute_values.value', 'value')
+        .leftJoinAndSelect('product_variant.images', 'images')
+        .where('product_variant.id = :id', { id })
+        .select([
+          'product_variant.id',
+          'product_variant.price',
+          'product_variant.stock',
+          'product_variant.slug',
+          'product_variant.product',
+          'product.id',
+          'product.name',
+          'product.description',
+          'product.image',
+          'product.is_active',
+          'product.average_rating',
+          'product.category',
+          'product_variant_attributes.id',
+          'product_attribute.id',
+          'product_attribute.name',
+          'product_variant_attribute_values.id',
+          'value.id',
+          'value.value',
+          'images.id',
+          'images.image',
+        ])
+        .getOne();
 
       if (!productVariant) {
         throw new NotFoundException(`Product variant with ID ${id} not found`);

@@ -60,7 +60,7 @@ import { InfrastructureModule } from 'src/infrastructure/meili-search/meili.modu
     PaymentsModule,
     WalletsModule,
     TypeOrmModule.forFeature([ProductsEntity, CategoriesEntity]),
-    InfrastructureModule
+    InfrastructureModule,
   ],
   providers: [ProductSeeder],
 })

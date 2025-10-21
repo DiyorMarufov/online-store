@@ -7,6 +7,7 @@ import {
   Param,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,7 +24,7 @@ import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ImageValidationPipe } from 'src/infrastructure/pipe/image.validation';
 
 @ApiTags('Product Variants')
@@ -33,7 +34,7 @@ export class ProductVariantsController {
     private readonly productVariantsService: ProductVariantsService,
   ) {}
 
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FilesInterceptor('images'))
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
@@ -43,8 +44,22 @@ export class ProductVariantsController {
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    description: 'Data for creating product variant, including image',
-    type: CreateProductVariantDto,
+    description: 'Data for creating product variant, including multiple images',
+    schema: {
+      type: 'object',
+      properties: {
+        product_id: { type: 'number', example: 3 },
+        price: { type: 'number', example: 299.99 },
+        stock: { type: 'number', example: 50 },
+        images: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 201,
@@ -59,47 +74,19 @@ export class ProductVariantsController {
           product_id: 3,
           price: 299.99,
           stock: 50,
-          image: 'https://example.com/variant1.png',
+          images: [
+            'https://example.com/variant1.png',
+            'https://example.com/variant2.png',
+          ],
         },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Validation failed',
-    schema: {
-      example: {
-        success: false,
-        statusCode: 400,
-        message: 'product_id should not be empty',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Missing or invalid token',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'Unauthorized',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Only Admin or Superadmin can create',
-    schema: {
-      example: {
-        statusCode: 403,
-        message: 'Forbidden user with role USER',
       },
     },
   })
   create(
     @Body() createProductVariantDto: CreateProductVariantDto,
-    @UploadedFile(new ImageValidationPipe()) image?: Express.Multer.File, 
+    @UploadedFiles(new ImageValidationPipe()) images?: Express.Multer.File[],
   ) {
-    return this.productVariantsService.create(createProductVariantDto, image);
+    return this.productVariantsService.create(createProductVariantDto, images);
   }
 
   @Get()

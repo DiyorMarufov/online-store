@@ -6,10 +6,15 @@ import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
 import { ProductsEntity } from 'src/core/entity/products.entity';
 import { TokenService } from 'src/infrastructure/jwt';
 import { FileModule } from 'src/infrastructure/file/file.module';
+import { ProductVariantImagesEntity } from 'src/core/entity/product_variant_images.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProductVariantsEntity, ProductsEntity]),
+    TypeOrmModule.forFeature([
+      ProductVariantsEntity,
+      ProductsEntity,
+      ProductVariantImagesEntity,
+    ]),
     FileModule,
   ],
   controllers: [ProductVariantsController],
