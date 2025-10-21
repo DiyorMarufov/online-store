@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import {
@@ -10,6 +20,8 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiBody,
+  ApiParam,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { ReviewsEntity } from 'src/core/entity/reviews.entity';
 import { AuthGuard } from 'src/common/guard/auth.guard';
@@ -18,6 +30,7 @@ import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
+import { UpdateReviewDto } from './dto/update-review.dto';
 
 @ApiTags('Reviews')
 @Controller('reviews')
@@ -107,5 +120,60 @@ export class ReviewsController {
   })
   findAll() {
     return this.reviewsService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @Get(':id')
+  @ApiOperation({ summary: 'Get review by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Review ID' })
+  @ApiResponse({ status: 200, description: 'Successfully fetched review.' })
+  @ApiResponse({ status: 404, description: 'Review not found.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.reviewsService.findOne(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update review by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Review ID' })
+  @ApiBody({ type: UpdateReviewDto })
+  @ApiResponse({ status: 200, description: 'Review successfully updated.' })
+  @ApiResponse({ status: 400, description: 'Invalid data provided.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden. Insufficient permissions.',
+  })
+  update(
+    @Body() updateReviewDto: UpdateReviewDto,
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.reviewsService.update(updateReviewDto, id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete review by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Review ID' })
+  @ApiResponse({ status: 200, description: 'Review successfully deleted.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden. Insufficient permissions.',
+  })
+  @ApiResponse({ status: 404, description: 'Review not found.' })
+  delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.reviewsService.delete(id, user);
   }
 }

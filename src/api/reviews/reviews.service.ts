@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import { OrderStatus, UsersRoles } from 'src/common/enum';
 import { OrderItemsRepo } from 'src/core/repo/order_items.repo';
 import { successRes } from 'src/infrastructure/successResponse';
 import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
+import { UpdateReviewDto } from './dto/update-review.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -110,6 +112,75 @@ export class ReviewsService {
         .addSelect(['customer.id', 'customer.full_name', 'customer.email'])
         .getMany();
       return successRes(allReviews);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findOne(id: number) {
+    try {
+      const existsReview = await this.reviewRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsReview) {
+        throw new NotFoundException(`Review with ID ${id} not found`);
+      }
+
+      return successRes(existsReview);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async update(
+    updateReviewDto: UpdateReviewDto,
+    id: number,
+    user: UsersEntity,
+  ) {
+    try {
+      const existsReview = await this.reviewRepo.findOne({
+        where: { id },
+        relations: ['customer'],
+      });
+
+      if (!existsReview) {
+        throw new NotFoundException(`Review with ID ${id} not found`);
+      }
+
+      if (
+        user.role === UsersRoles.CUSTOMER &&
+        user.id !== existsReview.customer.id
+      ) {
+        throw new ForbiddenException(`Can't update other's review`);
+      }
+
+      await this.reviewRepo.update(id, updateReviewDto);
+      return successRes({}, 200, 'Review updated successfully');
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async delete(id: number, user: UsersEntity) {
+    try {
+      const existsReview = await this.reviewRepo.findOne({
+        where: { id },
+        relations: ['customer'],
+      });
+
+      if (!existsReview) {
+        throw new NotFoundException(`Review with ID ${id} not found`);
+      }
+
+      if (
+        user.role === UsersRoles.CUSTOMER &&
+        user.id !== existsReview.customer.id
+      ) {
+        throw new ForbiddenException(`Can't delete other's review`);
+      }
+      await this.reviewRepo.delete(id);
+      return successRes();
     } catch (error) {
       return errorCatch(error);
     }

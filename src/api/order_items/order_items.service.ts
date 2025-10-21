@@ -28,10 +28,13 @@ export class OrderItemsService {
 
   async findOne(id: number, user: UsersEntity) {
     try {
-      const existsOrderItem = await this.orderItemRepo.findOne({
-        where: { id },
-        relations: ['order', 'order.customer'],
-      });
+      const existsOrderItem = await this.orderItemRepo
+        .createQueryBuilder('orderItem')
+        .leftJoinAndSelect('orderItem.order', 'order')
+        .leftJoin('order.customer', 'customer')
+        .addSelect(['customer.id', 'customer.full_name', 'customer.email'])
+        .where('orderItem.id = :id', { id })
+        .getOne();
 
       if (!existsOrderItem) {
         throw new NotFoundException(`Order item with ID ${id} not found`);

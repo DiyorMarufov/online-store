@@ -35,11 +35,9 @@ export class CartItemsService {
         where: { id: cart_id },
         relations: ['customer'],
       });
-
       if (!existsCart) {
         throw new NotFoundException(`Cart with ID ${cart_id} not found`);
       }
-
       if (
         user.role === UsersRoles.CUSTOMER &&
         user.id !== existsCart.customer.id
