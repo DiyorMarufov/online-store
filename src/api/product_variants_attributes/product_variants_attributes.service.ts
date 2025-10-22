@@ -21,6 +21,7 @@ import { ProductVariantAttributeValueRepo } from 'src/core/repo/product_variant_
 import { ProductsRepo } from 'src/core/repo/products.repo';
 import { ProductsEntity } from 'src/core/entity/products.entity';
 import { index } from 'src/infrastructure/meili-search/meili.search';
+import { UpdateProductVariantsAttributeDto } from './dto/update-product_variants_attribute.dto';
 
 @Injectable()
 export class ProductVariantsAttributesService {
@@ -53,6 +54,12 @@ export class ProductVariantsAttributesService {
         ],
       });
 
+      if (!variant) {
+        throw new NotFoundException(
+          `Product variant with ID ${product_variant_id} not found`,
+        );
+      }
+      
       const attribute = await this.productAttributeRepo.findOne({
         where: { id: attribute_id },
       });
@@ -233,7 +240,7 @@ export class ProductVariantsAttributesService {
             'product_variant',
             'product_variant.product',
             'product_attribute',
-            'product_value',
+            'product_variant_attribute_values',
           ],
         });
 
@@ -244,6 +251,36 @@ export class ProductVariantsAttributesService {
       }
 
       return successRes(productVariantAttribute);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async update(
+    updateProductVariantAttributesDto: UpdateProductVariantsAttributeDto,
+    id: number,
+  ) {
+    try {
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async delete(id: number) {
+    try {
+      const existsProductVariantAttribute =
+        await this.productVariantAttributeRepo.findOne({
+          where: { id },
+        });
+
+      if (!existsProductVariantAttribute) {
+        throw new NotFoundException(
+          `Product variant attribute with ID ${id} not found`,
+        );
+      }
+
+      await this.productVariantAttributeRepo.delete(id);
+      return successRes();
     } catch (error) {
       return errorCatch(error);
     }

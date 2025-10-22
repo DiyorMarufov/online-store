@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Param,
+  Patch,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -12,6 +22,7 @@ import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
 import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
+import { UpdateProductVariantsAttributeDto } from './dto/update-product_variants_attribute.dto';
 
 @ApiTags('Product Variants Attributes')
 @Controller('product-variants-attributes')
@@ -75,5 +86,48 @@ export class ProductVariantsAttributesController {
   @ApiResponse({ status: 404, description: 'Attribute not found' })
   findOne(@Param('id') id: number) {
     return this.productVariantsAttributesService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(
+    @Body()
+    updateProductVariantAttributesDto: UpdateProductVariantsAttributeDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.productVariantsAttributesService.update(
+      updateProductVariantAttributesDto,
+      id,
+    );
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a product variant attribute by ID' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID of the product variant attribute to delete',
+    example: 5,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Product variant attribute successfully deleted',
+    schema: {
+      example: {
+        success: true,
+        statusCode: 200,
+        message: 'Product variant attribute successfully deleted',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Product variant attribute not found',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.productVariantsAttributesService.delete(id);
   }
 }
