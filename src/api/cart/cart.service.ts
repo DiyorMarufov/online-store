@@ -35,7 +35,7 @@ export class CartService {
       const cart = await this.cartRepo
         .createQueryBuilder('cart')
         .leftJoinAndSelect('cart.cart_items', 'cart_items')
-        .leftJoinAndSelect('cart.customer', 'customer')
+        .leftJoin('cart.customer', 'customer')
         .addSelect(['customer.id', 'customer.full_name', 'customer.email'])
         .where('cart.id = :id', { id })
         .getOne();
@@ -43,10 +43,10 @@ export class CartService {
       if (!cart) {
         throw new NotFoundException(`Cart with ID ${id} not found`);
       }
-
       if (user.role === UsersRoles.CUSTOMER && cart.customer.id !== user.id) {
         throw new ForbiddenException(`You can't access to other's cart`);
       }
+
       return successRes(cart);
     } catch (error) {
       return errorCatch(error);

@@ -125,6 +125,21 @@ export class ReviewsController {
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
   @ApiBearerAuth('access-token')
+  @Get('user')
+  @ApiOperation({ summary: 'Get all reviews by customer ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of reviews successfully retrieved',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Reviews not found' })
+  findAllByCustomerId(@CurrentUser() user: UsersEntity) {
+    return this.reviewsService.findAllByCustomerId(user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
   @Get(':id')
   @ApiOperation({ summary: 'Get review by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Review ID' })

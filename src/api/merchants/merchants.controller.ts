@@ -8,6 +8,8 @@ import {
   UploadedFile,
   Param,
   ParseIntPipe,
+  Patch,
+  Delete,
 } from '@nestjs/common';
 import { MerchantsService } from './merchants.service';
 import { CreateMerchantDto } from './dto/create-merchant.dto';
@@ -23,6 +25,7 @@ import {
   ApiNotFoundResponse,
   ApiForbiddenResponse,
   ApiParam,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
@@ -32,6 +35,7 @@ import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageValidationPipe } from 'src/infrastructure/pipe/image.validation';
+import { UpdateMerchantDto } from './dto/update-merchant.dto';
 
 @ApiTags('Merchants')
 @Controller('merchants')
@@ -153,6 +157,21 @@ export class MerchantsController {
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
   @ApiBearerAuth('access-token')
+  @Get('stores')
+  @ApiOperation({ summary: 'Get all stores by merchant ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of merchant stores successfully retrieved',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Merchant stores not found' })
+  findAllByMerchantId(@CurrentUser() user: UsersEntity) {
+    return this.merchantsService.findAllByMerchantId(user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get merchant by ID (Admin, SuperAdmin, Merchant)' })
   @ApiParam({ name: 'id', type: Number, description: 'Merchant ID' })
   @ApiOkResponse({
@@ -207,5 +226,38 @@ export class MerchantsController {
     @CurrentUser() user: UsersEntity,
   ) {
     return this.merchantsService.findOne(id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update merchant by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Merchant ID' })
+  @ApiResponse({ status: 200, description: 'Merchant successfully updated' })
+  @ApiResponse({ status: 404, description: 'Merchant not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  update(
+    @Body() updateMerchantDto: UpdateMerchantDto,
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.merchantsService.update(updateMerchantDto, id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete merchant by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Merchant ID' })
+  @ApiResponse({ status: 200, description: 'Merchant successfully deleted' })
+  @ApiResponse({ status: 404, description: 'Merchant not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.merchantsService.delete(id, user);
   }
 }

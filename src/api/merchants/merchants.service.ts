@@ -13,6 +13,7 @@ import { UsersRepo } from 'src/core/repo/users.repo';
 import { successRes } from 'src/infrastructure/successResponse';
 import { UsersRoles } from 'src/common/enum';
 import { FileService } from 'src/infrastructure/file/file.service';
+import { UpdateMerchantDto } from './dto/update-merchant.dto';
 
 @Injectable()
 export class MerchantsService {
@@ -73,6 +74,18 @@ export class MerchantsService {
     }
   }
 
+  async findAllByMerchantId(user: UsersEntity) {
+    try {
+      const allMerchantStores = await this.merchantRepo.find({
+        where: { user: { id: user.id } },
+        relations: ['merchant_products'],
+      });
+      return successRes(allMerchantStores);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findOne(id: number, user: UsersEntity) {
     try {
       const existsMerchant = await this.merchantRepo
@@ -96,6 +109,60 @@ export class MerchantsService {
       }
 
       return successRes(existsMerchant);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async update(
+    updateMerchantDto: UpdateMerchantDto,
+    id: number,
+    user: UsersEntity,
+  ) {
+    try {
+      const existsMerchantStore = await this.merchantRepo.findOne({
+        where: { id },
+        relations: ['user'],
+      });
+
+      if (!existsMerchantStore) {
+        throw new NotFoundException(`Merchant store with ID ${id} not found`);
+      }
+
+      if (
+        user.role === UsersRoles.MERCHANT &&
+        user.id !== existsMerchantStore.user.id
+      ) {
+        throw new ForbiddenException(`Can't update other's store`);
+      }
+
+      await this.merchantRepo.update(id, updateMerchantDto);
+      return successRes({}, 200, 'Merchant store updated successfully');
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async delete(id: number, user: UsersEntity) {
+    try {
+      const existsMerchantStore = await this.merchantRepo.findOne({
+        where: { id },
+        relations: ['user'],
+      });
+
+      if (!existsMerchantStore) {
+        throw new NotFoundException(`Merchant store with ID ${id} not found`);
+      }
+
+      if (
+        user.role === UsersRoles.MERCHANT &&
+        user.id !== existsMerchantStore.user.id
+      ) {
+        throw new ForbiddenException(`Can't delete other's store`);
+      }
+
+      await this.merchantRepo.delete(id);
+      return successRes();
     } catch (error) {
       return errorCatch(error);
     }

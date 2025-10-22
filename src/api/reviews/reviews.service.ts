@@ -117,6 +117,38 @@ export class ReviewsService {
     }
   }
 
+  async findAllByCustomerId(user: UsersEntity) {
+    try {
+      const allReviewsByCustomerId = await this.reviewRepo
+        .createQueryBuilder('review')
+        .leftJoin('review.product', 'product')
+        .leftJoin('product.product_variants', 'variant')
+        .leftJoin('variant.product_variant_attributes', 'pva')
+        .leftJoin('pva.product_attribute', 'attr')
+        .leftJoin('pva.product_variant_attribute_values', 'attrValue')
+        .addSelect([
+          'review.id',
+          'review.rating',
+          'review.comment',
+          'review.created_at',
+          'product.id',
+          'product.name',
+          'variant.id',
+          'pva.id',
+          'attr.id',
+          'attr.name',
+          'attrValue.id',
+          'attrValue.value',
+        ])
+        .where('review.customer.id = :customerId', { customerId: user.id })
+        .getMany();
+
+      return successRes(allReviewsByCustomerId);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findOne(id: number) {
     try {
       const existsReview = await this.reviewRepo.findOne({

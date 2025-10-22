@@ -137,7 +137,7 @@ export class FavoritesController {
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
   @ApiBearerAuth('access-token')
-  @Get('users/favorites')
+  @Get('users')
   @ApiOperation({
     summary: 'Get all favorites for the current authenticated user',
   })

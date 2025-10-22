@@ -175,7 +175,7 @@ export class OrdersController {
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
   @ApiBearerAuth('access-token')
-  @Get('user/orders')
+  @Get('user')
   @ApiOperation({ summary: 'Get all orders for the current user' })
   @ApiResponse({
     status: 200,
