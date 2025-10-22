@@ -129,11 +129,15 @@ export class ProductsService {
     search?: ProductSearchByCategoryDto,
   ) {
     try {
-      const allCategories = await this.categoryRepo
-        .createQueryBuilder('category')
-        .leftJoinAndSelect('category.parent', 'parent')
-        .leftJoinAndSelect('category.children', 'children')
-        .getMany();
+      const page = search?.page || 1;
+      const limit = search?.limit || 10;
+      const meiliQuery = search?.name || '';
+
+      const filter: string[] = [];
+
+      const allCategories = await this.categoryRepo.find({
+        relations: ['parent', 'children'],
+      });
 
       const findAllChildIds = (id: number): number[] => {
         const children = allCategories.filter((c) => c.parent?.id === id);
@@ -143,75 +147,60 @@ export class ProductsService {
         }
         return ids;
       };
-
-      const categoryIds = findAllChildIds(Number(category_id))
-        .map((id) => Number(id))
-        .filter((id) => !isNaN(id));
-
-      const page = search?.page || 1;
-      const limit = search?.limit || 10;
-
-      const query = this.productRepo
-        .createQueryBuilder('p')
-        .leftJoinAndSelect('p.category', 'category')
-        .leftJoinAndSelect('p.product_variants', 'variant')
-        .where('category.id IN (:...ids)', { ids: categoryIds });
-
-      if (search?.name) {
-        query.andWhere('p.name ILIKE :name', { name: `%${search.name}%` });
-      }
-
-      if (search?.description) {
-        query.andWhere('p.description ILIKE :desc', {
-          desc: `%${search.description}%`,
-        });
+      const categoryIds = findAllChildIds(Number(category_id)).filter(
+        (id) => !isNaN(id),
+      );
+      if (categoryIds.length) {
+        const categoryFilter = categoryIds
+          .map((id) => `category_id = ${id}`)
+          .join(' OR ');
+        filter.push(categoryFilter);
       }
 
       if (search?.attribute_id) {
-        query.leftJoin('variant.product_variant_attributes', 'attr_values');
-        query.leftJoin('attr_values.product_attribute', 'attr');
-        query.andWhere('attr.id = :attributeId', {
-          attributeId: search.attribute_id,
-        });
+        filter.push(`attribute_id = ${search.attribute_id}`);
       }
 
       if (search?.attribute_value_id) {
-        query.leftJoin('variant.product_variant_attributes', 'attr_values');
-        query.leftJoin('attr_values.product_values', 'value');
-        query.andWhere('value.id = :attributeValueId', {
-          attributeValueId: search.attribute_value_id,
-        });
+        filter.push(`attribute_value_id = ${search.attribute_value_id}`);
       }
 
+      if (search?.description) {
+        filter.push(`description = "${search.description}"`);
+      }
+
+      let sort: string[] = [];
       switch (search?.sort) {
         case 'cheap':
-          query.orderBy('variant.price', 'ASC');
+          sort = ['price:asc'];
           break;
         case 'expensive':
-          query.orderBy('variant.price', 'DESC');
+          sort = ['price:desc'];
           break;
         case 'most_rated':
-          query.orderBy('p.average_rating', 'DESC');
+          sort = ['average_rating:desc'];
           break;
         case 'recent_products':
-          query.orderBy('p.created_at', 'DESC');
+          sort = ['created_at:desc'];
           break;
         default:
-          query.orderBy('p.id', 'ASC');
+          sort = ['id:asc'];
           break;
       }
-
-      query.skip((page - 1) * limit).take(limit);
-
-      const [products, total] = await query.getManyAndCount();
+      const results = await index.search(meiliQuery, {
+        limit,
+        offset: (page - 1) * limit,
+        filter: filter.length ? filter : undefined,
+        sort: sort.length ? sort : undefined,
+      });
 
       return successRes({
-        data: products,
+        data: results.hits,
         meta: {
-          total,
+          total: results.estimatedTotalHits,
           page,
           limit,
-          last_page: Math.ceil(total / limit),
+          last_page: Math.ceil(results.estimatedTotalHits / limit),
         },
       });
     } catch (error) {

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -74,6 +75,57 @@ export class FavoritesService {
         relations: ['customer', 'product'],
       });
       return successRes(allFavorites);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findAllByUserId(user: UsersEntity) {
+    try {
+      const allFavoritesByUserId = await this.favoriteRepo
+        .createQueryBuilder('f')
+        .leftJoinAndSelect('f.product', 'product')
+        .leftJoinAndSelect('product.product_variants', 'variants')
+        .where('f.customer.id = :userId', { userId: user.id })
+        .select([
+          'f.id',
+          'product.id',
+          'product.name',
+          'product.description',
+          'product.image',
+          'product.average_rating',
+          'variants.id',
+          'variants.price',
+        ])
+        .getMany();
+
+      return successRes(allFavoritesByUserId);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async delete(id: number, user: UsersEntity) {
+    try {
+      const existsFavorite = await this.favoriteRepo.findOne({
+        where: { id },
+        relations: ['customer'],
+      });
+
+      if (!existsFavorite) {
+        throw new NotFoundException(`Favorite with ID ${id} not found`);
+      }
+
+      if (
+        user.role === UsersRoles.CUSTOMER &&
+        existsFavorite.customer.id !== user.id
+      ) {
+        throw new ForbiddenException(
+          'You are not allowed to delete this favorite',
+        );
+      }
+      await this.favoriteRepo.delete(id);
+      return successRes();
     } catch (error) {
       return errorCatch(error);
     }

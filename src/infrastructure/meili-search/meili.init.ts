@@ -11,6 +11,7 @@ export async function initMeiliIndex() {
     'price',
     'average_rating',
     'created_at',
+    'id'
   ]);
 
   console.log('MeiliSearch index initialized!');

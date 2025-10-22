@@ -19,11 +19,13 @@ import { successRes } from 'src/infrastructure/successResponse';
 import { OrdersRepo } from 'src/core/repo/orders.repo';
 import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
 import { WalletsEntity } from 'src/core/entity/wallets.entity';
+import { UsersRepo } from 'src/core/repo/users.repo';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectRepository(OrdersEntity) private readonly orderRepo: OrdersRepo,
+    @InjectRepository(UsersEntity) private readonly userRepo: UsersRepo,
     private readonly dataSource: DataSource,
   ) {}
   async create(createOrderDto: CreateOrderDto, user: UsersEntity) {
@@ -212,6 +214,76 @@ export class OrdersService {
         relations: ['order_items'],
       });
       return successRes(allOrders);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findOne(id: number) {
+    try {
+      const existsOrder = await this.orderRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsOrder) {
+        throw new NotFoundException(`Order with ID ${id} not found`);
+      }
+
+      return successRes(existsOrder);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findAllByCustomerId(user: UsersEntity) {
+    try {
+      const existsUser = await this.userRepo.findOne({
+        where: { id: user.id },
+      });
+
+      if (!existsUser) {
+        throw new NotFoundException(`User with ID ${user.id} not found`);
+      }
+
+      const allOrdersByCustomerId = await this.orderRepo
+        .createQueryBuilder('o')
+        .leftJoinAndSelect('o.address', 'address')
+        .leftJoinAndSelect('o.order_items', 'order_items')
+        .leftJoinAndSelect('order_items.product_variant', 'product_variant')
+        .leftJoinAndSelect('product_variant.images', 'images')
+        .leftJoinAndSelect('o.payment', 'payment')
+        .where('o.customer.id = :userId', { userId: existsUser.id })
+        .select([
+          'o.id',
+          'o.total_price',
+          'o.status',
+          'o.created_at',
+          'o.updated_at',
+          'address.id',
+          'address.region',
+          'address.city',
+          'address.street',
+          'address.is_default',
+          'order_items.id',
+          'order_items.quantity',
+          'order_items.price',
+          'product_variant.id',
+          'product_variant.price',
+          'product_variant.stock',
+          'product_variant.slug',
+          'images.id',
+          'images.image',
+          'payment.id',
+          'payment.amount',
+          'payment.method',
+          'payment.status',
+          'payment.transaction_id',
+          'payment.created_at',
+          'payment.updated_at',
+        ])
+        .getMany();
+
+      return successRes(allOrdersByCustomerId);
     } catch (error) {
       return errorCatch(error);
     }

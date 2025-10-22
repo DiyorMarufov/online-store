@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -10,6 +18,7 @@ import {
   ApiBody,
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -19,6 +28,7 @@ import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
+import { OrdersEntity } from 'src/core/entity/orders.entity';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -145,5 +155,34 @@ export class OrdersController {
   })
   findAll() {
     return this.ordersService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a single order by ID (Admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'The order has been successfully retrieved.',
+    type: OrdersEntity,
+  })
+  @ApiResponse({ status: 404, description: 'Order not found.' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.findOne(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @Get('user/orders')
+  @ApiOperation({ summary: 'Get all orders for the current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of orders for the current user.',
+    type: [OrdersEntity],
+  })
+  findAllByCustomerId(@CurrentUser() user: UsersEntity) {
+    return this.ordersService.findAllByCustomerId(user);
   }
 }

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Delete,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { FavoritesService } from './favorites.service';
 import { CreateFavoriteDto } from './dto/create-favorite.dto';
 import {
@@ -12,6 +21,7 @@ import {
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
   ApiBody,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
@@ -19,6 +29,7 @@ import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
+import { FavoritesEntity } from 'src/core/entity/favorites.entity';
 
 @ApiTags('Favorites')
 @Controller('favorites')
@@ -121,5 +132,46 @@ export class FavoritesController {
   })
   findAll() {
     return this.favoritesService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @Get('users/favorites')
+  @ApiOperation({
+    summary: 'Get all favorites for the current authenticated user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of user favorites retrieved successfully.',
+    type: [FavoritesEntity],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized. Access token missing or invalid.',
+  })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  findAllByUserId(@CurrentUser() user: UsersEntity) {
+    return this.favoritesService.findAllByUserId(user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Delete a favorite by ID (only owner or admin can delete)',
+  })
+  @ApiResponse({ status: 200, description: 'Favorite deleted successfully.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden. User not allowed to delete this favorite.',
+  })
+  @ApiResponse({ status: 404, description: 'Favorite not found.' })
+  delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.favoritesService.delete(id, user);
   }
 }

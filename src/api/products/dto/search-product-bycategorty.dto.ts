@@ -14,10 +14,10 @@ export class ProductSearchByCategoryDto {
   description?: string;
 
   @ApiPropertyOptional({
-    enum: ['cheap', 'expensive', 'most_rated', 'recent_orders'],
+    enum: ['cheap', 'expensive', 'most_rated', 'recent_products'],
   })
   @IsOptional()
-  @IsEnum(['cheap', 'expensive', 'most_rated', 'recent_orders'])
+  @IsEnum(['cheap', 'expensive', 'most_rated', 'recent_products'])
   sort?: string;
 
   @ApiPropertyOptional({ description: 'Filter by attribute ID' })
