@@ -8,6 +8,9 @@ import {
   UseInterceptors,
   UploadedFile,
   UploadedFiles,
+  Patch,
+  ParseIntPipe,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -26,6 +29,7 @@ import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ImageValidationPipe } from 'src/infrastructure/pipe/image.validation';
+import { UpdateProductVariantDto } from './dto/update-product_variant.dto';
 
 @ApiTags('Product Variants')
 @Controller('product-variants')
@@ -89,11 +93,14 @@ export class ProductVariantsController {
     return this.productVariantsService.create(createProductVariantDto, images);
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
   @Get()
-  @ApiOperation({ summary: 'Get all product variants (Public)' })
+  @ApiOperation({ summary: 'Get all product variants' })
   @ApiResponse({
     status: 200,
-    description: 'Returns a list of all product variants',
+    description: 'List of all product variants successfully retrieved',
     schema: {
       example: {
         success: true,
@@ -117,6 +124,8 @@ export class ProductVariantsController {
       },
     },
   })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'No product variants found' })
   findAll() {
     return this.productVariantsService.findAll();
   }
@@ -185,5 +194,40 @@ export class ProductVariantsController {
   @ApiResponse({ status: 404, description: 'Product variant not found' })
   findOne(@Param('id') id: number) {
     return this.productVariantsService.findOne(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update product variant by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Product variant ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Product variant successfully updated',
+  })
+  @ApiResponse({ status: 404, description: 'Product variant not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  update(
+    @Body() updateProductVariantDto: UpdateProductVariantDto,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.productVariantsService.update(updateProductVariantDto, id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete product variant by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Product variant ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Product variant successfully deleted',
+  })
+  @ApiResponse({ status: 404, description: 'Product variant not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.productVariantsService.delete(id);
   }
 }

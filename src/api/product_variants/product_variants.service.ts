@@ -12,6 +12,7 @@ import { FileService } from 'src/infrastructure/file/file.service';
 import { index } from 'src/infrastructure/meili-search/meili.search';
 import { ProductVariantImagesEntity } from 'src/core/entity/product_variant_images.entity';
 import { ProductVariantImagesRepo } from 'src/core/repo/product_variant_images.repo';
+import { UpdateProductVariantDto } from './dto/update-product_variant.dto';
 
 @Injectable()
 export class ProductVariantsService {
@@ -143,6 +144,7 @@ export class ProductVariantsService {
       const allProductVariants = await this.productVariantRepo
         .createQueryBuilder('pv')
         .leftJoinAndSelect('pv.product', 'products')
+        .leftJoinAndSelect('pv.images', 'images')
         .orderBy('pv.id', 'ASC')
         .getMany();
       return successRes(allProductVariants);
@@ -217,6 +219,55 @@ export class ProductVariantsService {
       };
 
       return successRes(formatted);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async update(updateProductVariantDto: UpdateProductVariantDto, id: number) {
+    try {
+      const { product_id, ...updateData } = updateProductVariantDto;
+      const existsProductVariant = await this.productVariantRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsProductVariant) {
+        throw new NotFoundException(`Product variant with ID ${id} not found`);
+      }
+
+      if (product_id) {
+        const existsProduct = await this.productRepo.findOne({
+          where: { id: product_id },
+        });
+
+        if (!existsProduct) {
+          throw new NotFoundException(
+            `Product with ID ${product_id} not found`,
+          );
+        }
+
+        existsProductVariant.product = existsProduct;
+      }
+      Object.assign(existsProductVariant, updateData);
+      await this.productVariantRepo.save(existsProductVariant);
+      return successRes({}, 200, 'Product variant successfully updated');
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async delete(id: number) {
+    try {
+      const existsProductVariant = await this.productVariantRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsProductVariant) {
+        throw new NotFoundException(`Product variant with ID ${id} not found`);
+      }
+
+      await this.productVariantRepo.delete(id);
+      return successRes();
     } catch (error) {
       return errorCatch(error);
     }
