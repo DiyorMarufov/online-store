@@ -34,9 +34,10 @@ export default class Application {
         'access-token',
       )
       .build();
-    app.setGlobalPrefix('api');
+    const api = 'api';
+    app.setGlobalPrefix(api);
     const document = SwaggerModule.createDocument(app, swaggerConfig);
-    SwaggerModule.setup('api/docs', app, document, {
+    SwaggerModule.setup(`${api}/api-docs`, app, document, {
       swaggerOptions: {
         persistAuthorization: true,
       },
