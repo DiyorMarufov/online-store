@@ -40,6 +40,6 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /home/bitnami/projects/online-store
-            npm install --production
-            npm install -g pm2
+            npm install
+            npm run build
             pm2 restart online-store || pm2 start dist/main.js --name "online-store"
