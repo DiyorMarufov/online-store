@@ -17,6 +17,7 @@ export default class Application {
       }),
     );
     app.use(cookieParser());
+    app.enableCors({ origin: '*' });
 
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Online store example')
@@ -33,9 +34,9 @@ export default class Application {
         'access-token',
       )
       .build();
-
+    app.setGlobalPrefix('api');
     const document = SwaggerModule.createDocument(app, swaggerConfig);
-    SwaggerModule.setup('api', app, document, {
+    SwaggerModule.setup('api/docs', app, document, {
       swaggerOptions: {
         persistAuthorization: true,
       },
