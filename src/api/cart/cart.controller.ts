@@ -73,10 +73,10 @@ export class CartController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
-  @checkRoles(UsersRoles.CUSTOMER)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
   @Get(':id')
-  @ApiOperation({ summary: 'Get a cart by ID (customer only)' })
+  @ApiOperation({ summary: 'Get a cart by ID (superadmin and admin)' })
   @ApiParam({ name: 'id', description: 'Cart ID', example: 1 })
   @ApiResponse({
     status: 200,
@@ -138,4 +138,32 @@ export class CartController {
   ) {
     return this.cartService.findOne(id, user);
   }
+
+ @UseGuards(AuthGuard, RolesGuard)
+@checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+@ApiBearerAuth('access-token')
+@ApiTags('Cart')
+@ApiOperation({ summary: 'Foydalanuvchining cart maʼlumotlarini olish' })
+@ApiResponse({
+  status: 200,
+  description: 'Foydalanuvchining cart maʼlumotlari muvaffaqiyatli qaytarildi.',
+  schema: {
+    example: {
+      id: 'a1b2c3d4',
+      userId: 'u123',
+      items: [
+        { productId: 'p456', quantity: 2 },
+        { productId: 'p789', quantity: 1 },
+      ],
+    },
+  },
+})
+@ApiResponse({ status: 401, description: 'Avtorizatsiya talab qilinadi yoki token yaroqsiz.' })
+@ApiResponse({ status: 403, description: 'Ruxsat etilmagan rol (faqat SUPERADMIN, ADMIN, CUSTOMER uchun).' })
+@ApiResponse({ status: 404, description: 'Foydalanuvchiga tegishli cart topilmadi.' })
+@Get('user/cart')
+findOneByCustomerId(@CurrentUser() user: UsersEntity) {
+  return this.cartService.findOneByCustomerId(user);
+}
+
 }

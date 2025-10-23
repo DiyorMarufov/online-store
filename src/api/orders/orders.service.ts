@@ -269,8 +269,6 @@ export class OrdersService {
           'order_items.price',
           'product_variant.id',
           'product_variant.price',
-          'product_variant.stock',
-          'product_variant.slug',
           'images.id',
           'images.image',
           'payment.id',

@@ -35,6 +35,10 @@ export class CartService {
       const cart = await this.cartRepo
         .createQueryBuilder('cart')
         .leftJoinAndSelect('cart.cart_items', 'cart_items')
+        .leftJoin('cart_items.product_variant', 'pv')
+        .addSelect(['pv.id', 'pv.price', 'pv.stock'])
+        .leftJoin('pv.product', 'pvp')
+        .addSelect(['pvp.id', 'pvp.name', 'pvp.description', 'pvp.image'])
         .leftJoin('cart.customer', 'customer')
         .addSelect(['customer.id', 'customer.full_name', 'customer.email'])
         .where('cart.id = :id', { id })
@@ -46,6 +50,26 @@ export class CartService {
       if (user.role === UsersRoles.CUSTOMER && cart.customer.id !== user.id) {
         throw new ForbiddenException(`You can't access to other's cart`);
       }
+
+      return successRes(cart);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findOneByCustomerId(user: UsersEntity) {
+    try {
+      const cart = await this.cartRepo
+        .createQueryBuilder('cart')
+        .leftJoinAndSelect('cart.cart_items', 'cart_items')
+        .leftJoin('cart_items.product_variant', 'pv')
+        .addSelect(['pv.id', 'pv.price', 'pv.stock'])
+        .leftJoin('pv.product', 'pvp')
+        .addSelect(['pvp.id', 'pvp.name', 'pvp.description', 'pvp.image'])
+        .leftJoin('cart.customer', 'customer')
+        .addSelect(['customer.id', 'customer.full_name', 'customer.email'])
+        .where('cart.customer.id = :id', { id: user.id })
+        .getOne();
 
       return successRes(cart);
     } catch (error) {
