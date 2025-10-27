@@ -279,7 +279,7 @@ export class UsersService {
       res.clearCookie(cookieName);
       return successRes({}, 200, 'User signed out successfully');
     } catch (error) {
-      console.log(error)
+      console.log(error);
       return errorCatch(error);
     }
   }
@@ -288,6 +288,42 @@ export class UsersService {
     try {
       const allUsers = await this.userRepo.find();
       return successRes(allUsers);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findUserById(user: UsersEntity) {
+    try {
+      const existsUser = await this.userRepo.findOne({
+        where: { id: user.id },
+        select: ['id', 'email', 'full_name', 'role'],
+      });
+
+      if (!existsUser) {
+        throw new NotFoundException(`User with ID ${user.id} not found`);
+      }
+
+      return successRes(existsUser);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findOne(id: number, user: UsersEntity) {
+    try {
+      const existsUser = await this.userRepo.findOne({
+        where: { id },
+      });
+
+      if (!existsUser) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      if (user.role === UsersRoles.ADMIN && user.id !== existsUser.id) {
+        throw new ForbiddenException(`You can't get other admin account`);
+      }
+      return successRes(existsUser);
     } catch (error) {
       return errorCatch(error);
     }

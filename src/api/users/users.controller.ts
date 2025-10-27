@@ -31,6 +31,8 @@ import { AuthGuard } from 'src/common/guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { UserGuard } from 'src/common/guard/self.guard';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { CurrentUser } from 'src/common/decorator/current-user.decorator';
+import { UsersEntity } from 'src/core/entity/users.entity';
 
 @ApiTags('Users')
 @Controller('users')
@@ -210,6 +212,61 @@ export class UsersController {
   @Get()
   findAllUsers() {
     return this.usersService.findAllUsers();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(
+    UsersRoles.SUPERADMIN,
+    UsersRoles.ADMIN,
+    UsersRoles.MERCHANT,
+    UsersRoles.CUSTOMER,
+  )
+  @ApiBearerAuth('access-token')
+  @Get('profile')
+  @ApiOperation({
+    summary: "Joriy foydalanuvchining profil ma'lumotlarini olish",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Profil ma'lumotlari.",
+    type: UsersEntity,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token yaroqsiz yoki taqdim etilmagan (Unauthorized).',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Sizning rolingiz ushbu resursga kirishga ruxsat bermaydi.',
+  })
+  findUserById(@CurrentUser() user: UsersEntity) {
+    return this.usersService.findUserById(user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get(':id')
+  @ApiOperation({ summary: 'Foydalanuvchini ID orqali olish' })
+  @ApiResponse({
+    status: 200,
+    description: 'Foydalanuvchi muvaffaqiyatli topildi.',
+    type: UsersEntity,
+  })
+  @ApiResponse({ status: 404, description: 'Foydalanuvchi topilmadi.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Token yaroqsiz yoki taqdim etilmagan (Unauthorized).',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Kirish taqiqlangan (Faqa ADMIN/SUPERADMIN ruxsat etilgan).',
+  })
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsersEntity,
+  ) {
+    return this.usersService.findOne(id, user);
   }
 
   @UseGuards(AuthGuard, RolesGuard, UserGuard)
