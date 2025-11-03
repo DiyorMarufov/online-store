@@ -10,6 +10,7 @@ import {
   Delete,
   Get,
   Req,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -33,6 +34,7 @@ import { UserGuard } from 'src/common/guard/self.guard';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
+import { SearchQueryDto } from './dto/seach-query.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -210,8 +212,8 @@ export class UsersController {
     description: 'Unauthorized. Token is missing or invalid',
   })
   @Get()
-  findAllUsers() {
-    return this.usersService.findAllUsers();
+  findAllUsers(@Query() query?: SearchQueryDto) {
+    return this.usersService.findAllUsers(query);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

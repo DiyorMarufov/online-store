@@ -28,6 +28,7 @@ import { WalletsEntity } from 'src/core/entity/wallets.entity';
 import { WalletsRepo } from 'src/core/repo/wallets.repo';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { Not } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -82,8 +83,6 @@ export class UsersService {
         ...createUserDto,
         password: hashed_pass,
         role,
-        is_verified: true,
-        status: Status.ACTIVE,
       });
 
       await this.userRepo.save(newUser);
@@ -284,9 +283,16 @@ export class UsersService {
     }
   }
 
-  async findAllUsers() {
+  async findAllUsers(query?: any) {
     try {
-      const allUsers = await this.userRepo.find();
+      const allUsers = await this.userRepo.find({
+        where: {
+          role: Not(UsersRoles.SUPERADMIN),
+        },
+        order: {
+          id: 'asc',
+        },
+      });
       return successRes(allUsers);
     } catch (error) {
       return errorCatch(error);
