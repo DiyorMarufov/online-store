@@ -18,7 +18,21 @@ export class PaymentsService {
   ) {}
   async findAll() {
     try {
-      const allPayments = await this.paymentRepo.find({ relations: ['order'] });
+      const allPayments = await this.paymentRepo
+        .createQueryBuilder('payment')
+        .leftJoin('payment.order', 'order')
+        .leftJoin('order.customer', 'customer')
+        .leftJoin('customer.wallets', 'wallet')
+        .select([
+          "payment.id",
+          'payment.created_at',
+          'payment.amount',
+          'order.status',
+          'customer.full_name',
+          'wallet.balance',
+        ])
+        .getMany();
+
       return successRes(allPayments);
     } catch (error) {
       return errorCatch(error);

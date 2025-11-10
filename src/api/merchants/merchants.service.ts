@@ -74,6 +74,15 @@ export class MerchantsService {
     }
   }
 
+  async totalMerchantStores() {
+    try {
+      const allMerchantStores = await this.merchantRepo.count();
+      return successRes(allMerchantStores);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findAllByMerchantId(user: UsersEntity) {
     try {
       const allMerchantStores = await this.merchantRepo.find({

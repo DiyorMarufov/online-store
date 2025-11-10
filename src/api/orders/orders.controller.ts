@@ -160,6 +160,38 @@ export class OrdersController {
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
+  @Get('total-orders')
+  @ApiOperation({ summary: 'Get total number of orders' })
+  @ApiResponse({
+    status: 200,
+    description: 'Total count of all orders returned successfully.',
+    schema: {
+      example: {
+        success: true,
+        message: 'Total orders fetched successfully',
+        data: { total: 157 },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized – missing or invalid token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden – only SUPERADMIN or ADMIN can access this route.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error.',
+  })
+  totalOrders() {
+    return this.ordersService.totalOrders();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
   @Get(':id')
   @ApiOperation({ summary: 'Get a single order by ID (Admin only)' })
   @ApiResponse({

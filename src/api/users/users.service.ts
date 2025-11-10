@@ -299,6 +299,17 @@ export class UsersService {
     }
   }
 
+  async totalAdmins() {
+    try {
+      const totalAdmins = await this.userRepo.count({
+        where: { role: UsersRoles.ADMIN },
+      });
+      return successRes(totalAdmins);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findUserById(user: UsersEntity) {
     try {
       const existsUser = await this.userRepo.findOne({

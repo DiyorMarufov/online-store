@@ -219,6 +219,15 @@ export class OrdersService {
     }
   }
 
+  async totalOrders() {
+    try {
+      const allOrders = await this.orderRepo.count();
+      return successRes(allOrders);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findOne(id: number) {
     try {
       const existsOrder = await this.orderRepo.findOne({

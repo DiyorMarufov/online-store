@@ -154,6 +154,40 @@ export class MerchantsController {
     return this.merchantsService.findAll();
   }
 
+  @ApiOperation({ summary: 'Get total number of merchant stores' })
+  @ApiResponse({
+    status: 200,
+    description: 'Total count of all merchant stores returned successfully.',
+    schema: {
+      example: {
+        success: true,
+        message: 'Total merchant stores fetched successfully',
+        data: { total: 42 },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized – missing or invalid token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden – only SUPERADMIN, ADMIN, or MERCHANT can access this route.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error.',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Get('total-stores')
+  totalMerchantStores() {
+    return this.merchantsService.totalMerchantStores();
+  }
+
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
   @ApiBearerAuth('access-token')

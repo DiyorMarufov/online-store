@@ -217,6 +217,38 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admins')
+  @ApiOperation({ summary: 'Get total number of admin users' })
+  @ApiResponse({
+    status: 200,
+    description: 'Total count of all admin users returned successfully.',
+    schema: {
+      example: {
+        success: true,
+        message: 'Total admins fetched successfully',
+        data: { total: 8 },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized – missing or invalid token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden – only SUPERADMIN can access this route.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error.',
+  })
+  totalAdmins() {
+    return this.usersService.totalAdmins();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(
     UsersRoles.SUPERADMIN,
     UsersRoles.ADMIN,
