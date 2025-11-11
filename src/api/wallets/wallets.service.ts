@@ -66,4 +66,17 @@ export class WalletsService {
       return errorCatch(error);
     }
   }
+
+  async findTotalBalance() {
+    try {
+      const result = await this.walletRepo
+        .createQueryBuilder('wallet')
+        .select('SUM(wallet.balance)', 'totalBalance')
+        .getRawOne();
+
+      return successRes(result);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
 }

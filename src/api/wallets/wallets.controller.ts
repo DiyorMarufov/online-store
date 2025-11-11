@@ -8,6 +8,7 @@ import {
   ApiBody,
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { WalletsService } from './wallets.service';
 import { CreateWalletDto } from './dto/create-wallet.dto';
@@ -125,5 +126,24 @@ export class WalletsController {
   })
   findAll() {
     return this.walletsService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('total-balance')
+  @ApiOperation({ summary: 'Get total balance of all wallets' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns total balance of all wallets',
+    schema: {
+      example: {
+        totalBalance: 1250000,
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  getTotalBalance() {
+    return this.walletsService.findTotalBalance();
   }
 }

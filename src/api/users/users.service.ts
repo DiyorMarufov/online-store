@@ -310,6 +310,19 @@ export class UsersService {
     }
   }
 
+  async totalUsers() {
+    try {
+      const totalUsers = await this.userRepo.count({
+        where: {
+          role: Not(UsersRoles.SUPERADMIN),
+        },
+      });
+      return successRes(totalUsers);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findUserById(user: UsersEntity) {
     try {
       const existsUser = await this.userRepo.findOne({

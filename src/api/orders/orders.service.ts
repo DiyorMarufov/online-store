@@ -210,9 +210,19 @@ export class OrdersService {
 
   async findAll() {
     try {
-      const allOrders = await this.orderRepo.find({
-        relations: ['order_items'],
-      });
+      const allOrders = await this.orderRepo
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.customer', 'customer')
+        .select([
+          'order.id',
+          'order.total_price',
+          'order.status',
+          'order.created_at',
+          'customer.id',
+          'customer.full_name',
+        ])
+        .getMany();
+
       return successRes(allOrders);
     } catch (error) {
       return errorCatch(error);
