@@ -15,8 +15,8 @@ export class MerchantsEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'store_name' })
   store_name: string;
 
-  @Column({ type: 'varchar', name: 'store_logo' })
-  store_logo: string;
+  @Column({ type: 'varchar', name: 'store_logo',nullable: true })
+  store_logo?: string;
 
   @Column({ type: 'text', name: 'store_description' })
   store_description: string;

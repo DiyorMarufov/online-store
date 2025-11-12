@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateMerchantDto {
@@ -14,4 +14,7 @@ export class CreateMerchantDto {
   @IsString()
   @IsNotEmpty()
   store_description: string;
+
+  @IsOptional()
+  image?: string;
 }

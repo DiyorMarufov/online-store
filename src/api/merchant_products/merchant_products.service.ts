@@ -104,6 +104,17 @@ export class MerchantProductsService {
     }
   }
 
+  async totalMerchantProducts(user: UsersEntity) {
+    try {
+      const totalMerchantProducts = await this.merchantProductRepo.count({
+        where: { id: user.id },
+      });
+      return successRes(totalMerchantProducts);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findOne(id: number, user: UsersEntity) {
     try {
       const existsMerchantProduct = await this.merchantProductRepo

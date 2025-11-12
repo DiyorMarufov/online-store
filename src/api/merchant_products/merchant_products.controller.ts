@@ -25,6 +25,7 @@ import {
   ApiBody,
   ApiParam,
   ApiNotFoundResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
@@ -108,6 +109,20 @@ export class MerchantProductsController {
   })
   findAll() {
     return this.merchantProductsService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Get('total-products')
+  @ApiOperation({ summary: 'Get total number of products for the merchant' })
+  @ApiOkResponse({
+    description: 'Total number of products returned successfully',
+  })
+  @ApiUnauthorizedResponse({ description: 'Token is missing or invalid' })
+  @ApiForbiddenResponse({ description: 'Access denied' })
+  totalMerchantProducts(@CurrentUser() user: UsersEntity) {
+    return this.merchantProductsService.totalMerchantProducts(user);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

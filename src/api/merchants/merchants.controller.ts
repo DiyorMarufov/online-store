@@ -204,6 +204,22 @@ export class MerchantsController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Get('self-store')
+  @ApiOperation({
+    summary: 'Get the store belonging to the current user (for merchant)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved the merchant’s store',
+  })
+  @ApiResponse({ status: 404, description: 'Store not found' })
+  findMerchantByUserId(@CurrentUser() user: UsersEntity) {
+    return this.merchantsService.findMerchantByUserId(user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get merchant by ID (Admin, SuperAdmin, Merchant)' })

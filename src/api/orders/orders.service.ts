@@ -229,10 +229,50 @@ export class OrdersService {
     }
   }
 
+  async findAllForMerchants(user: UsersEntity) {
+    try {
+      const allMerchantOrders = await this.orderRepo
+        .createQueryBuilder('order')
+        .leftJoin('order.customer', 'customer')
+        .leftJoin('customer.merchant', 'merchant')
+        .where('customer.id = :id', { id: user.id })
+        .select([
+          'order.id AS id',
+          'customer.full_name AS customer_name',
+          'merchant.store_name AS merchant_store_name',
+          'merchant.store_description AS merchant_store_description',
+          'order.status AS status',
+          'order.created_at AS created_at',
+        ])
+        .getRawMany();
+
+      return successRes(allMerchantOrders);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async totalOrders() {
     try {
       const allOrders = await this.orderRepo.count();
       return successRes(allOrders);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async totalOrdersForMerchant(user: UsersEntity) {
+    try {
+      const totalOrders = await this.orderRepo.count({
+        where: {
+          customer: {
+            merchant: {
+              id: user.id,
+            },
+          },
+        },
+      });
+      return successRes(totalOrders);
     } catch (error) {
       return errorCatch(error);
     }

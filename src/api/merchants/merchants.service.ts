@@ -95,6 +95,22 @@ export class MerchantsService {
     }
   }
 
+  async findMerchantByUserId(user: UsersEntity) {
+    try {
+      const merchant = await this.merchantRepo.findOne({
+        where: { user: { id: user.id } },
+      });
+
+      if (!merchant)
+        throw new NotFoundException(
+          `Merchant with User ID ${user.id} not found`,
+        );
+      return successRes(merchant);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findOne(id: number, user: UsersEntity) {
     try {
       const existsMerchant = await this.merchantRepo

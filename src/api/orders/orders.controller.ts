@@ -158,6 +158,18 @@ export class OrdersController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Get('merchants')
+  @ApiOperation({ summary: 'Get all orders for merchants' })
+  @ApiOkResponse({ description: 'List of orders' })
+  @ApiUnauthorizedResponse({ description: 'Token is missing or invalid' })
+  @ApiForbiddenResponse({ description: 'Access denied' })
+  findAllForMerchants(@CurrentUser() user: UsersEntity) {
+    return this.ordersService.findAllForMerchants(user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
   @Get('total-orders')
@@ -187,6 +199,20 @@ export class OrdersController {
   })
   totalOrders() {
     return this.ordersService.totalOrders();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Get('total-orders/merchants')
+  @ApiOperation({ summary: 'Get total number of orders for merchants' })
+  @ApiOkResponse({
+    description: 'Total number of orders returned successfully',
+  })
+  @ApiUnauthorizedResponse({ description: 'Token is missing or invalid' })
+  @ApiForbiddenResponse({ description: 'Access denied' })
+  totalOrdersForMerchants(@CurrentUser() user: UsersEntity) {
+    return this.ordersService.totalOrdersForMerchant(user);
   }
 
   @UseGuards(AuthGuard, RolesGuard)
