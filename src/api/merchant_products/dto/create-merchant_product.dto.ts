@@ -4,14 +4,6 @@ import { IsBoolean, IsInt, IsNotEmpty, IsNumber } from 'class-validator';
 export class CreateMerchantProductDto {
   @ApiProperty({
     example: 5,
-    description: 'Merchant ID',
-  })
-  @IsInt()
-  @IsNotEmpty()
-  merchant_id: number;
-
-  @ApiProperty({
-    example: 5,
     description: 'ID of the product variant being sold',
   })
   @IsInt()

@@ -153,6 +153,45 @@ export class ProductVariantsService {
     }
   }
 
+  async findAllForMerchants() {
+    try {
+      const allProductVariants = await this.productVariantRepo.find({
+        relations: [
+          'product',
+          'product_variant_attributes',
+          'product_variant_attributes.product_variant_attribute_values',
+          'product_variant_attributes.product_variant_attribute_values.value',
+          'product_variant_attributes.product_variant_attribute_values.value.product_attribute',
+        ],
+        select: {
+          id: true,
+          product: {
+            id: true,
+            name: true,
+            image: true,
+          },
+          price: true,
+          stock: true,
+          product_variant_attributes: {
+            product_variant_attribute_values: {
+              value: {
+                product_attribute: {
+                  name: true,
+                },
+                value: true,
+              },
+            },
+          },
+          
+          created_at: true,
+        },
+      });
+      return successRes(allProductVariants);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findOne(id: number) {
     try {
       const productVariant = await this.productVariantRepo

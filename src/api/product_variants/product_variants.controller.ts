@@ -130,6 +130,31 @@ export class ProductVariantsController {
     return this.productVariantsService.findAll();
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Get('merchant')
+  @ApiTags('Merchant Products')
+  @ApiOperation({
+    summary: 'Get all products for SuperAdmin, Admin and Merchant',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all merchant products returned successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid access token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden — user does not have the required role (SUPERADMIN, ADMIN, or MERCHANT).',
+  })
+  findAllForMerchants() {
+    return this.productVariantsService.findAllForMerchants();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get product variant by ID' })
   @ApiParam({
