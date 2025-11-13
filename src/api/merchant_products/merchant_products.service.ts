@@ -31,16 +31,18 @@ export class MerchantProductsService {
     createMerchantProductDto: CreateMerchantProductDto,
     user: UsersEntity,
   ) {
-    const { product_variant_id, stock, price, is_active } =
+    const { merchant_id, product_variant_id, stock, price, is_active } =
       createMerchantProductDto;
 
     return await this.dataSource.transaction(async (manager) => {
       const existsMerchant = await manager.findOne(MerchantsEntity, {
-        where: { id: user.id },
+        where: { id: merchant_id },
         relations: ['user'],
       });
       if (!existsMerchant)
-        throw new NotFoundException(`Merchant with ID ${user.id} not found`);
+        throw new NotFoundException(
+          `Merchant with ID ${merchant_id} not found`,
+        );
 
       if (
         user.role === UsersRoles.MERCHANT &&
@@ -81,13 +83,7 @@ export class MerchantProductsService {
       });
       await manager.save(newMerchantProduct);
 
-      return {
-        merchant_id: newMerchantProduct.merchant.id,
-        product_variant_id: newMerchantProduct.product_variant.id,
-        price: newMerchantProduct.price,
-        stock: newMerchantProduct.stock,
-        is_active: newMerchantProduct.is_active,
-      };
+      return successRes({}, 201, 'New merchant product created successfully');
     });
   }
 
@@ -106,11 +102,15 @@ export class MerchantProductsService {
     try {
       const allMerchantProducts = await this.merchantProductRepo.find({
         where: {
-          merchant: { id: user.id },
+          merchant: { user: { id: user.id } },
         },
+        relations: ['product_variant', 'product_variant.product'],
         select: {
+          id: true,
           product_variant: {
+            id: true,
             product: {
+              id: true,
               name: true,
             },
           },
