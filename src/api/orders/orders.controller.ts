@@ -169,6 +169,23 @@ export class OrdersController {
     return this.ordersService.findAllForMerchants(user);
   }
 
+  @ApiTags('Orders')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @Get('merchant-orders')
+  @ApiOperation({ summary: 'Get orders for merchant' })
+  @ApiOkResponse({
+    description: 'List of merchant orders successfully returned',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({
+    description: 'Forbidden: insufficient role permissions',
+  })
+  findOrdersForMerchant(@CurrentUser() user: UsersEntity) {
+    return this.ordersService.findOrdersForMerchant(user);
+  }
+
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')

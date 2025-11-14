@@ -252,6 +252,63 @@ export class OrdersService {
     }
   }
 
+  async findOrdersForMerchant(user: UsersEntity) {
+    try {
+      const allMerchantOrders = await this.orderRepo.find({
+        where: { customer: { merchant: { id: user.id } } },
+        relations: [
+          'customer',
+          'order_items',
+          'order_items.product_variant',
+          'order_items.product_variant.product_variant_attributes',
+          'order_items.product_variant.product_variant_attributes.product_variant_attribute_values',
+          'order_items.product_variant.product_variant_attributes.product_variant_attribute_values.value',
+          'order_items.product_variant.product_variant_attributes.product_variant_attribute_values.value.product_attribute',
+        ],
+        select: {
+          id: true,
+          created_at: true,
+          customer: {
+            id: true,
+            full_name: true,
+          },
+          total_price: true,
+          payment: {
+            id: true,
+            amount: true,
+          },
+          status: true,
+          order_items: {
+            id: true,
+            price: true,
+            quantity: true,
+            created_at: true,
+            product_variant: {
+              id: true,
+              product_variant_attributes: {
+                id: true,
+                product_variant_attribute_values: {
+                  id: true,
+                  value: {
+                    id: true,
+                    product_attribute: {
+                      id: true,
+                      name: true,
+                    },
+                    value: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      return successRes(allMerchantOrders);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async totalOrders() {
     try {
       const allOrders = await this.orderRepo.count();
