@@ -335,6 +335,43 @@ export class OrdersService {
     }
   }
 
+  async findAllOrdersForCustomer(user: UsersEntity) {
+    try {
+      const allOrdersOfCustomer = await this.orderRepo.find({
+        where: {
+          customer: {
+            role: UsersRoles.CUSTOMER,
+            merchant: {
+              id: user.id,
+            },
+          },
+        },
+        relations: ['customer', 'customer.orders', 'customer.addresses'],
+        select: {
+          id: true,
+          customer: {
+            id: true,
+            full_name: true,
+            email: true,
+            created_at: true,
+            orders: {
+              id: true,
+            },
+            addresses: {
+              id: true,
+              region: true,
+            },
+          },
+          total_price: true,
+          created_at: true,
+        },
+      });
+      return successRes(allOrdersOfCustomer);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async findOne(id: number) {
     try {
       const existsOrder = await this.orderRepo.findOne({

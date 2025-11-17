@@ -79,4 +79,23 @@ export class WalletsService {
       return errorCatch(error);
     }
   }
+
+  async findTotalBalanceMerchant(user: UsersEntity) {
+    try {
+      const merchantWallet = await this.walletRepo.findOne({
+        where: {
+          user: {
+            id: user.id,
+          },
+        },
+        select: {
+          id: true,
+          balance: true,
+        },
+      });
+      return successRes(merchantWallet);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
 }

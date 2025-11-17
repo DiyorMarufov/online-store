@@ -143,7 +143,16 @@ export class WalletsController {
     },
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
-  getTotalBalance() {
+  findTotalBalance() {
     return this.walletsService.findTotalBalance();
+  }
+
+  @Get('total-balance/merchant')
+  @ApiOperation({ summary: 'Get total balance for merchant' })
+  @ApiOkResponse({
+    description: 'Total balance information for merchant',
+  })
+  findTotalBalanceMerchant(@CurrentUser() user: UsersEntity) {
+    return this.walletsService.findTotalBalanceMerchant(user);
   }
 }

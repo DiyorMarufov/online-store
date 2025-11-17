@@ -169,7 +169,6 @@ export class OrdersController {
     return this.ordersService.findAllForMerchants(user);
   }
 
-  @ApiTags('Orders')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
@@ -230,6 +229,18 @@ export class OrdersController {
   @ApiForbiddenResponse({ description: 'Access denied' })
   totalOrdersForMerchants(@CurrentUser() user: UsersEntity) {
     return this.ordersService.totalOrdersForMerchant(user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Get('merchant-orders/customers')
+  @ApiOperation({ summary: 'Get all customers for merchant' })
+  @ApiOkResponse({
+    description: 'List of customers with their order stats',
+  })
+  findAllOrdersForCustomer(@CurrentUser() user: UsersEntity) {
+    return this.ordersService.findAllOrdersForCustomer(user);
   }
 
   @UseGuards(AuthGuard, RolesGuard)
