@@ -24,7 +24,7 @@ export class PaymentsService {
         .leftJoin('order.customer', 'customer')
         .leftJoin('customer.wallets', 'wallet')
         .select([
-          "payment.id",
+          'payment.id',
           'payment.created_at',
           'payment.amount',
           'order.status',
@@ -34,6 +34,36 @@ export class PaymentsService {
         .getMany();
 
       return successRes(allPayments);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findAllForMerchant(user: UsersEntity) {
+    try {
+      const allPaymentsForMerchant = await this.paymentRepo.find({
+        where: {
+          order: {
+            customer: {
+              merchant: {
+                id: user.id,
+              },
+            },
+          },
+        },
+        select: {
+          id: true,
+          order: {
+            id: true,
+          },
+          amount: true,
+          method: true,
+          status: true,
+          transaction_id: true,
+          created_at: true,
+        },
+      });
+      return successRes(allPaymentsForMerchant);
     } catch (error) {
       return errorCatch(error);
     }

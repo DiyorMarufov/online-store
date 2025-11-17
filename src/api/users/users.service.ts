@@ -85,6 +85,14 @@ export class UsersService {
         role,
       });
 
+      if (role === UsersRoles.MERCHANT) {
+        await this.walletRepo.save(
+          this.walletRepo.create({
+            user: newUser,
+            balance: 0,
+          }),
+        );
+      }
       await this.userRepo.save(newUser);
 
       return successRes(

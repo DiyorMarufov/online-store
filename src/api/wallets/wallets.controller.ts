@@ -147,10 +147,13 @@ export class WalletsController {
     return this.walletsService.findTotalBalance();
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
   @Get('total-balance/merchant')
   @ApiOperation({ summary: 'Get total balance for merchant' })
   @ApiOkResponse({
-    description: 'Total balance information for merchant',
+    description: 'Total balance information for the merchant',
   })
   findTotalBalanceMerchant(@CurrentUser() user: UsersEntity) {
     return this.walletsService.findTotalBalanceMerchant(user);

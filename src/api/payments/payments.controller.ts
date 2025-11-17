@@ -12,6 +12,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiBearerAuth,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
@@ -66,6 +67,21 @@ export class PaymentsController {
   })
   findAll() {
     return this.paymentsService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @ApiBearerAuth('access-token')
+  @Get('merchant')
+  @ApiOperation({ summary: 'Get all payments for merchant' })
+  @ApiOkResponse({
+    description: 'List of all payments for the merchant',
+    schema: {
+      type: 'array',
+    },
+  })
+  findAllForMerchant(@CurrentUser() user: UsersEntity) {
+    return this.paymentsService.findAllForMerchant(user);
   }
 
   @UseGuards(AuthGuard, RolesGuard)
