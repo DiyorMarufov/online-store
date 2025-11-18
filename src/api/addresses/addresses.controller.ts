@@ -19,7 +19,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { UsersRoles } from 'src/common/enum';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';

@@ -16,7 +16,7 @@ import { OrderItemsService } from './order_items.service';
 import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';

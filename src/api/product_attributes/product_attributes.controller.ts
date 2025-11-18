@@ -19,7 +19,7 @@ import { ProductAttributesService } from './product_attributes.service';
 import { CreateProductAttributeDto } from './dto/create-product_attribute.dto';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { UpdateProductAttributeDto } from './dto/update-product_attribute.dto';
 

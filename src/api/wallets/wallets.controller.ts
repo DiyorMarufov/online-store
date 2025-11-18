@@ -14,7 +14,7 @@ import { WalletsService } from './wallets.service';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
 import { RolesGuard } from 'src/common/guard/roles.guard';

@@ -25,7 +25,7 @@ import { ProductVariantsService } from './product_variants.service';
 import { CreateProductVariantDto } from './dto/create-product_variant.dto';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ImageValidationPipe } from 'src/infrastructure/pipe/image.validation';

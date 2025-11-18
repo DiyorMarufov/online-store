@@ -19,6 +19,8 @@ import {
   ApiBody,
   ApiBearerAuth,
   ApiParam,
+  ApiOkResponse,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -28,7 +30,7 @@ import { UserRolesForSignOut, UsersRoles } from 'src/common/enum';
 import { ConfirmOtpDto } from './dto/confirm-otp.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { checkRoles } from 'src/common/decorator/role.decorator';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { UserGuard } from 'src/common/guard/self.guard';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
@@ -64,7 +66,7 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
-  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.MERCHANT)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
   @Post('merchant')
   @ApiOperation({ summary: 'Create a new merchant user' })
@@ -251,6 +253,22 @@ export class UsersController {
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
+  @Get('admin/users')
+  @ApiOperation({ summary: 'Get all users for admin and superadmin' })
+  @ApiOkResponse({
+    description: 'List of users',
+    schema: {
+      type: 'array',
+      items: { $ref: getSchemaPath(UsersEntity) },
+    },
+  })
+  findAllUsersForAdmin() {
+    return this.usersService.findAllUsersForAdmin();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
   @Get('total-users')
   @ApiOperation({ summary: 'Get total number of users' })
   @ApiResponse({
@@ -359,7 +377,7 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
-  @checkRoles(UsersRoles.SUPERADMIN)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiOperation({ summary: 'Update user status (active/inactive)' })
   @ApiResponse({ status: 200, description: 'User status successfully updated' })
   @ApiResponse({

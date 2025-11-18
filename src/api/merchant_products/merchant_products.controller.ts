@@ -13,7 +13,7 @@ import { MerchantProductsService } from './merchant_products.service';
 import { CreateMerchantProductDto } from './dto/create-merchant_product.dto';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import {
   ApiTags,

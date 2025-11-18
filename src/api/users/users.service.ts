@@ -28,7 +28,7 @@ import { WalletsEntity } from 'src/core/entity/wallets.entity';
 import { WalletsRepo } from 'src/core/repo/wallets.repo';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
-import { Not } from 'typeorm';
+import { In, Not } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -217,52 +217,48 @@ export class UsersService {
   }
 
   async signInUser(signInUserDto: SignInUserDto, res: Response) {
-    try {
-      const { email, password } = signInUserDto;
+    const { email, password } = signInUserDto;
 
-      const user = await this.userRepo.findOne({
-        where: { email },
-      });
+    const user = await this.userRepo.findOne({
+      where: { email },
+    });
 
-      if (!user) {
-        throw new BadRequestException(`Email or password incorrect`);
-      }
-
-      if (user.status === Status.INACTIVE) {
-        throw new BadRequestException(`You have been blocked by superadmin`);
-      }
-
-      const matchPassword = await this.bcrypt.compare(password, user.password);
-
-      if (!matchPassword) {
-        throw new BadRequestException(`Email or password incorrect`);
-      }
-
-      const { id, role } = user;
-      const payload = { id, role };
-      const accessToken = await this.jwt.generateAccessToken(payload);
-      const refreshToken = await this.jwt.generateRefreshToken(payload);
-
-      let cookieNameRole: string;
-      switch (role) {
-        case UsersRoles.SUPERADMIN:
-          cookieNameRole = 'Superadmin';
-          break;
-        case UsersRoles.ADMIN:
-          cookieNameRole = 'Admin';
-          break;
-        case UsersRoles.MERCHANT:
-          cookieNameRole = 'Merchant';
-          break;
-        case UsersRoles.CUSTOMER:
-          cookieNameRole = 'Customer';
-          break;
-      }
-      writeToCookie(res, refreshToken, `refreshToken${cookieNameRole}`);
-      return successRes({ accessToken, refreshToken });
-    } catch (error) {
-      return errorCatch(error);
+    if (!user) {
+      throw new BadRequestException(`Email or password incorrect`);
     }
+
+    if (user.status === Status.INACTIVE) {
+      throw new BadRequestException(`You have been blocked by superadmin`);
+    }
+
+    const matchPassword = await this.bcrypt.compare(password, user.password);
+
+    if (!matchPassword) {
+      throw new BadRequestException(`Email or password incorrect`);
+    }
+
+    const { id, role } = user;
+    const payload = { id, role };
+    const accessToken = await this.jwt.generateAccessToken(payload);
+    const refreshToken = await this.jwt.generateRefreshToken(payload);
+
+    let cookieNameRole: string;
+    switch (role) {
+      case UsersRoles.SUPERADMIN:
+        cookieNameRole = 'Superadmin';
+        break;
+      case UsersRoles.ADMIN:
+        cookieNameRole = 'Admin';
+        break;
+      case UsersRoles.MERCHANT:
+        cookieNameRole = 'Merchant';
+        break;
+      case UsersRoles.CUSTOMER:
+        cookieNameRole = 'Customer';
+        break;
+    }
+    writeToCookie(res, refreshToken, `refreshToken${cookieNameRole}`);
+    return successRes({ accessToken, refreshToken });
   }
 
   async signOutUser(refreshToken: string, res: Response, cookieName: string) {
@@ -298,10 +294,35 @@ export class UsersService {
           role: Not(UsersRoles.SUPERADMIN),
         },
         order: {
-          id: 'asc',
+          id: 'ASC',
         },
       });
       return successRes(allUsers);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findAllUsersForAdmin() {
+    try {
+      const allUsersExceptAdmins = await this.userRepo.find({
+        where: {
+          role: Not(In([UsersRoles.SUPERADMIN, UsersRoles.ADMIN])),
+        },
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+          role: true,
+          is_verified: true,
+          status: true,
+          created_at: true,
+        },
+        order: {
+          id: 'ASC',
+        },
+      });
+      return successRes(allUsersExceptAdmins);
     } catch (error) {
       return errorCatch(error);
     }
@@ -335,7 +356,7 @@ export class UsersService {
     try {
       const existsUser = await this.userRepo.findOne({
         where: { id: user.id },
-        select: ['id', 'email', 'full_name', 'role'],
+        select: ['id', 'email', 'full_name', 'role', 'status'],
       });
 
       if (!existsUser) {

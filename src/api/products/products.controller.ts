@@ -27,7 +27,7 @@ import {
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { Status, UsersRoles } from 'src/common/enum';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { ProductSearchDto } from './dto/search-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';

@@ -15,7 +15,7 @@ import {
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
@@ -139,31 +139,41 @@ export class CartController {
     return this.cartService.findOne(id, user);
   }
 
- @UseGuards(AuthGuard, RolesGuard)
-@checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
-@ApiBearerAuth('access-token')
-@ApiTags('Cart')
-@ApiOperation({ summary: 'Foydalanuvchining cart maʼlumotlarini olish' })
-@ApiResponse({
-  status: 200,
-  description: 'Foydalanuvchining cart maʼlumotlari muvaffaqiyatli qaytarildi.',
-  schema: {
-    example: {
-      id: 'a1b2c3d4',
-      userId: 'u123',
-      items: [
-        { productId: 'p456', quantity: 2 },
-        { productId: 'p789', quantity: 1 },
-      ],
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @ApiBearerAuth('access-token')
+  @ApiTags('Cart')
+  @ApiOperation({ summary: 'Foydalanuvchining cart maʼlumotlarini olish' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Foydalanuvchining cart maʼlumotlari muvaffaqiyatli qaytarildi.',
+    schema: {
+      example: {
+        id: 'a1b2c3d4',
+        userId: 'u123',
+        items: [
+          { productId: 'p456', quantity: 2 },
+          { productId: 'p789', quantity: 1 },
+        ],
+      },
     },
-  },
-})
-@ApiResponse({ status: 401, description: 'Avtorizatsiya talab qilinadi yoki token yaroqsiz.' })
-@ApiResponse({ status: 403, description: 'Ruxsat etilmagan rol (faqat SUPERADMIN, ADMIN, CUSTOMER uchun).' })
-@ApiResponse({ status: 404, description: 'Foydalanuvchiga tegishli cart topilmadi.' })
-@Get('user/cart')
-findOneByCustomerId(@CurrentUser() user: UsersEntity) {
-  return this.cartService.findOneByCustomerId(user);
-}
-
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Avtorizatsiya talab qilinadi yoki token yaroqsiz.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Ruxsat etilmagan rol (faqat SUPERADMIN, ADMIN, CUSTOMER uchun).',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Foydalanuvchiga tegishli cart topilmadi.',
+  })
+  @Get('user/cart')
+  findOneByCustomerId(@CurrentUser() user: UsersEntity) {
+    return this.cartService.findOneByCustomerId(user);
+  }
 }

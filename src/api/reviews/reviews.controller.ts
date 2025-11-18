@@ -24,7 +24,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { ReviewsEntity } from 'src/core/entity/reviews.entity';
-import { AuthGuard } from 'src/common/guard/auth.guard';
+import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
 import { RolesGuard } from 'src/common/guard/roles.guard';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';

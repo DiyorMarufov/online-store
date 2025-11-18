@@ -5,8 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersEntity } from 'src/core/entity/users.entity';
 import { ProductsEntity } from 'src/core/entity/products.entity';
 import { ReviewsEntity } from 'src/core/entity/reviews.entity';
-import { TokenService } from 'src/infrastructure/jwt';
 import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
+import { TokenModule } from 'src/infrastructure/jwt/token.module';
+import { AuthModule } from 'src/common/guard/auth-guard/auth-guard.module';
 
 @Module({
   imports: [
@@ -16,8 +17,10 @@ import { OrderItemsEntity } from 'src/core/entity/order_items.entity';
       ReviewsEntity,
       OrderItemsEntity,
     ]),
+    TokenModule,
+    AuthModule,
   ],
   controllers: [ReviewsController],
-  providers: [ReviewsService, TokenService],
+  providers: [ReviewsService],
 })
 export class ReviewsModule {}
