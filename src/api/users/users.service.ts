@@ -309,6 +309,22 @@ export class UsersService {
         where: {
           role: Not(In([UsersRoles.SUPERADMIN, UsersRoles.ADMIN])),
         },
+        relations: [
+          'addresses',
+          'orders',
+          'orders.payment',
+          'orders.order_items',
+          'orders.order_items.product_variant',
+          'orders.order_items.product_variant.product',
+          'wallets',
+          'cart',
+          'cart.cart_items',
+          'cart.cart_items.product_variant',
+          'cart.cart_items.product_variant.product',
+          'favorites',
+          'reviews',
+          'wallets',
+        ],
         select: {
           id: true,
           full_name: true,
@@ -317,7 +333,67 @@ export class UsersService {
           is_verified: true,
           status: true,
           created_at: true,
+          addresses: {
+            id: true,
+            city: true,
+            region: true,
+            street: true,
+          },
+          orders: {
+            id: true,
+            order_items: {
+              id: true,
+              product_variant: {
+                id: true,
+                price: true,
+                product: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+            status: true,
+            total_price: true,
+            payment: {
+              id: true,
+              amount: true,
+              method: true,
+              status: true,
+              transaction_id: true,
+            },
+          },
+          cart: {
+            id: true,
+            cart_items: {
+              id: true,
+              product_variant: {
+                id: true,
+                product: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          favorites: {
+            id: true,
+            product: {
+              id: true,
+              name: true,
+            },
+          },
+          reviews: {
+            id: true,
+            comment: true,
+            rating: true,
+          },
+          wallets: {
+            id: true,
+            balance: true,
+            currency: true,
+          },
         },
+
         order: {
           id: 'ASC',
         },
