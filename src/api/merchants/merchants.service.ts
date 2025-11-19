@@ -111,29 +111,32 @@ export class MerchantsService {
     }
   }
 
-  async findOne(id: number, user: UsersEntity) {
+  async findMerchantById(id: number) {
     try {
-      const existsMerchant = await this.merchantRepo
-        .createQueryBuilder('m')
-        .leftJoin('m.user', 'u')
-        .leftJoinAndSelect('m.merchant_products', 'mp')
-        .addSelect(['u.id', 'u.full_name', 'u.email'])
-        .where('m.id = :id', { id })
-        .getOne();
+      const merchant = await this.merchantRepo.findOne({
+        where: { user: { id } },
+        relations: {
+          user: true,
+        },
+        select: {
+          id: true,
+          store_name: true,
+          store_logo: true,
+          store_description: true,
+          verified: true,
+          created_at: true,
+          user: {
+            id: true,
+            full_name: true,
+            email: true,
+            status: true,
+            is_verified: true,
+            created_at: true,
+          },
+        },
+      });
 
-      if (!existsMerchant) {
-        throw new NotFoundException(`Merchant with ID ${id} not found`);
-      }
-      if (
-        user.role === UsersRoles.MERCHANT &&
-        user.id !== existsMerchant.user.id
-      ) {
-        throw new ForbiddenException(
-          'You are not allowed to get a store for another merchant',
-        );
-      }
-
-      return successRes(existsMerchant);
+      return successRes(merchant);
     } catch (error) {
       return errorCatch(error);
     }

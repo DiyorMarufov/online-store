@@ -94,4 +94,64 @@ export class PaymentsService {
       return errorCatch(error);
     }
   }
+
+  async findMerchantPaymentsById(id: number) {
+    try {
+      const payments = await this.paymentRepo.find({
+        where: {
+          order: {
+            order_items: {
+              product_variant: {
+                merchant_products: {
+                  merchant: {
+                    user: { id },
+                  },
+                },
+              },
+            },
+          },
+        },
+        relations: {
+          order: {
+            customer: true,
+            order_items: {
+              product_variant: {
+                product: true,
+              },
+            },
+          },
+        },
+        select: {
+          id: true,
+          amount: true,
+          method: true,
+          status: true,
+          created_at: true,
+
+          order: {
+            id: true,
+            customer: {
+              id: true,
+              full_name: true,
+            },
+            order_items: {
+              id: true,
+              product_variant: {
+                id: true,
+                product: {
+                  id: true,
+                  name: true,
+                  image: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return successRes(payments);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
 }

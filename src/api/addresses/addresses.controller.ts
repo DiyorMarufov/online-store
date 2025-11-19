@@ -17,6 +17,8 @@ import {
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
+  ApiParam,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { AuthGuard } from 'src/common/guard/auth-guard/auth.guard';
@@ -181,6 +183,19 @@ export class AddressesController {
     @CurrentUser() user: UsersEntity,
   ) {
     return this.addressesService.findOne(id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/customers/:id')
+  @ApiOperation({ summary: 'Get customer addresses' })
+  @ApiParam({ name: 'id', type: Number, description: 'Customer ID' })
+  @ApiOkResponse({
+    description: 'Customer address list',
+  })
+  findCustomerAddressesById(@Param('id', ParseIntPipe) id: number) {
+    return this.addressesService.findCustomerAddressesById(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

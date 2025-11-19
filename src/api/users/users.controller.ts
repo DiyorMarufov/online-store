@@ -21,6 +21,7 @@ import {
   ApiParam,
   ApiOkResponse,
   getSchemaPath,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -253,17 +254,33 @@ export class UsersController {
   @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
-  @Get('admin/users')
-  @ApiOperation({ summary: 'Get all users for admin and superadmin' })
+  @Get('admin/customers')
+  @ApiOperation({ summary: 'Get all customers for admin and superadmin' })
   @ApiOkResponse({
-    description: 'List of users',
+    description: 'List of customers',
     schema: {
       type: 'array',
       items: { $ref: getSchemaPath(UsersEntity) },
     },
   })
-  findAllUsersForAdmin() {
-    return this.usersService.findAllUsersForAdmin();
+  findAllCustomersForAdmin() {
+    return this.usersService.findAllCustomersForAdmin();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/merchants')
+  @ApiOperation({ summary: 'Get all merchants for admin and superadmin' })
+  @ApiOkResponse({
+    description: 'List of merchants',
+    schema: {
+      type: 'array',
+      items: { $ref: getSchemaPath(UsersEntity) },
+    },
+  })
+  findAllMerchantsForAdmin() {
+    return this.usersService.findAllMerchantsForAdmin();
   }
 
   @UseGuards(AuthGuard, RolesGuard)
@@ -351,6 +368,20 @@ export class UsersController {
     @CurrentUser() user: UsersEntity,
   ) {
     return this.usersService.findOne(id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get(':id/customer')
+  @ApiOperation({ summary: 'Get customer base info by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Customer ID' })
+  @ApiOkResponse({
+    description: 'Customer basic details',
+  })
+  @ApiNotFoundResponse({ description: 'Customer not found' })
+  findCustomerById(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findCustomerById(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard, UserGuard)

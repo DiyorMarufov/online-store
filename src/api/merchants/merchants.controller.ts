@@ -220,7 +220,7 @@ export class MerchantsController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
-  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get merchant by ID (Admin, SuperAdmin, Merchant)' })
   @ApiParam({ name: 'id', type: Number, description: 'Merchant ID' })
@@ -271,11 +271,8 @@ export class MerchantsController {
     },
   })
   @Get(':id')
-  findOne(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: UsersEntity,
-  ) {
-    return this.merchantsService.findOne(id, user);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.merchantsService.findMerchantById(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

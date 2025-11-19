@@ -163,6 +163,43 @@ export class MerchantProductsService {
     }
   }
 
+  async findMerchantProductsById(id: number) {
+    try {
+      const products = await this.merchantProductRepo.find({
+        where: {
+          merchant: {
+            user: { id },
+          },
+        },
+        relations: {
+          product_variant: {
+            product: true,
+          },
+        },
+        select: {
+          id: true,
+          price: true,
+          stock: true,
+          is_active: true,
+
+          product_variant: {
+            id: true,
+            price: true,
+            product: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      return successRes(products);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async update(
     updateMerchantProductDto: UpdateMerchantProductDto,
     id: number,

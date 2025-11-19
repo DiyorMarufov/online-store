@@ -76,4 +76,37 @@ export class CartService {
       return errorCatch(error);
     }
   }
+
+  async findCustomerCartById(id: number) {
+    try {
+      const cart = await this.cartRepo.findOne({
+        where: { customer: { id } },
+        relations: [
+          'cart_items',
+          'cart_items.product_variant',
+          'cart_items.product_variant.product',
+        ],
+        select: {
+          id: true,
+          cart_items: {
+            id: true,
+            quantity: true,
+            product_variant: {
+              id: true,
+              price: true,
+              product: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        },
+      });
+
+      return successRes(cart);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
 }

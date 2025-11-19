@@ -20,12 +20,27 @@ import { OrdersRepo } from 'src/core/repo/orders.repo';
 import { ProductVariantsEntity } from 'src/core/entity/product_variants.entity';
 import { WalletsEntity } from 'src/core/entity/wallets.entity';
 import { UsersRepo } from 'src/core/repo/users.repo';
+import { ReviewsEntity } from 'src/core/entity/reviews.entity';
+import { ReviewsRepo } from 'src/core/repo/reviews.repo';
+import { FavoritesEntity } from 'src/core/entity/favorites.entity';
+import { FavoritesRepo } from 'src/core/repo/favorites.repo';
+import { CartRepo } from 'src/core/repo/cart.repo';
+import { CartEntity } from 'src/core/entity/cart.entity';
+import { AddressesRepo } from 'src/core/repo/addresses.repo';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectRepository(OrdersEntity) private readonly orderRepo: OrdersRepo,
     @InjectRepository(UsersEntity) private readonly userRepo: UsersRepo,
+    @InjectRepository(ReviewsEntity) private readonly reviewRepo: ReviewsRepo,
+    @InjectRepository(CartEntity) private readonly cartRepo: CartRepo,
+    @InjectRepository(AddressesEntity)
+    private readonly addressRepo: AddressesRepo,
+
+    @InjectRepository(FavoritesEntity)
+    private readonly favoritesRepo: FavoritesRepo,
+
     private readonly dataSource: DataSource,
   ) {}
   async create(createOrderDto: CreateOrderDto, user: UsersEntity) {
@@ -388,53 +403,106 @@ export class OrdersService {
     }
   }
 
-  async findAllByCustomerId(user: UsersEntity) {
+  async findCustomerOrdersById(id: number) {
     try {
-      const existsUser = await this.userRepo.findOne({
-        where: { id: user.id },
+      const customerOrders = await this.orderRepo.find({
+        where: { customer: { id } },
+        relations: [
+          'order_items',
+          'order_items.product_variant',
+          'order_items.product_variant.product',
+          'payment',
+        ],
+        select: {
+          id: true,
+          status: true,
+          total_price: true,
+          created_at: true,
+          order_items: {
+            id: true,
+            quantity: true,
+            product_variant: {
+              id: true,
+              price: true,
+              product: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+          payment: {
+            id: true,
+            amount: true,
+            method: true,
+            status: true,
+            transaction_id: true,
+          },
+        },
+        order: {
+          created_at: 'DESC',
+        },
       });
 
-      if (!existsUser) {
-        throw new NotFoundException(`User with ID ${user.id} not found`);
-      }
+      return successRes(customerOrders);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
 
-      const allOrdersByCustomerId = await this.orderRepo
-        .createQueryBuilder('o')
-        .leftJoinAndSelect('o.address', 'address')
-        .leftJoinAndSelect('o.order_items', 'order_items')
-        .leftJoinAndSelect('order_items.product_variant', 'product_variant')
-        .leftJoinAndSelect('product_variant.images', 'images')
-        .leftJoinAndSelect('o.payment', 'payment')
-        .where('o.customer.id = :userId', { userId: existsUser.id })
-        .select([
-          'o.id',
-          'o.total_price',
-          'o.status',
-          'o.created_at',
-          'o.updated_at',
-          'address.id',
-          'address.region',
-          'address.city',
-          'address.street',
-          'address.is_default',
-          'order_items.id',
-          'order_items.quantity',
-          'order_items.price',
-          'product_variant.id',
-          'product_variant.price',
-          'images.id',
-          'images.image',
-          'payment.id',
-          'payment.amount',
-          'payment.method',
-          'payment.status',
-          'payment.transaction_id',
-          'payment.created_at',
-          'payment.updated_at',
-        ])
-        .getMany();
+  async findMerchantOrdersById(id: number) {
+    try {
+      const orders = await this.orderRepo.find({
+        where: {
+          order_items: {
+            product_variant: {
+              merchant_products: {
+                merchant: {
+                  user: { id },
+                },
+              },
+            },
+          },
+        },
+        relations: {
+          payment: true,
+          order_items: {
+            product_variant: {
+              product: true,
+            },
+          },
+        },
+        select: {
+          id: true,
+          status: true,
+          total_price: true,
+          created_at: true,
 
-      return successRes(allOrdersByCustomerId);
+          payment: {
+            id: true,
+            amount: true,
+            method: true,
+            status: true,
+            transaction_id: true,
+          },
+
+          order_items: {
+            id: true,
+            quantity: true,
+            product_variant: {
+              id: true,
+              price: true,
+              product: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        },
+      });
+
+      return successRes(orders);
     } catch (error) {
       return errorCatch(error);
     }

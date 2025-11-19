@@ -165,6 +165,102 @@ export class ReviewsService {
     }
   }
 
+  async findCustomerReviewsById(id: number) {
+    try {
+      const reviews = await this.reviewRepo.find({
+        where: { customer: { id } },
+        relations: ['product'],
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          created_at: true,
+          product: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        order: {
+          created_at: 'DESC',
+        },
+      });
+
+      return successRes(reviews);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findMerchantReviewsById(id: number) {
+    try {
+      const reviews = await this.reviewRepo.find({
+        relations: {
+          customer: true,
+          product: {
+            product_variants: {
+              merchant_products: {
+                merchant: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+
+        where: {
+          product: {
+            product_variants: {
+              merchant_products: {
+                merchant: {
+                  user: {
+                    id,
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          created_at: true,
+
+          customer: {
+            id: true,
+            full_name: true,
+          },
+
+          product: {
+            id: true,
+            name: true,
+            image: true,
+
+            product_variants: {
+              id: true,
+              merchant_products: {
+                id: true,
+                merchant: {
+                  id: true,
+                  user: {
+                    id: true,
+                    full_name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return successRes(reviews);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async update(
     updateReviewDto: UpdateReviewDto,
     id: number,

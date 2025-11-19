@@ -303,102 +303,99 @@ export class UsersService {
     }
   }
 
-  async findAllUsersForAdmin() {
+  async findAllCustomersForAdmin() {
     try {
-      const allUsersExceptAdmins = await this.userRepo.find({
+      const customers = await this.userRepo.find({
         where: {
-          role: Not(In([UsersRoles.SUPERADMIN, UsersRoles.ADMIN])),
+          role: Not(
+            In([UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT]),
+          ),
         },
-        relations: [
-          'addresses',
-          'orders',
-          'orders.payment',
-          'orders.order_items',
-          'orders.order_items.product_variant',
-          'orders.order_items.product_variant.product',
-          'wallets',
-          'cart',
-          'cart.cart_items',
-          'cart.cart_items.product_variant',
-          'cart.cart_items.product_variant.product',
-          'favorites',
-          'reviews',
-          'wallets',
-        ],
+        relations: ['orders'],
         select: {
           id: true,
           full_name: true,
           email: true,
+          status: true,
           role: true,
           is_verified: true,
-          status: true,
           created_at: true,
-          addresses: {
-            id: true,
-            city: true,
-            region: true,
-            street: true,
-          },
           orders: {
             id: true,
-            order_items: {
-              id: true,
-              product_variant: {
-                id: true,
-                price: true,
-                product: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-            status: true,
             total_price: true,
-            payment: {
-              id: true,
-              amount: true,
-              method: true,
-              status: true,
-              transaction_id: true,
-            },
-          },
-          cart: {
-            id: true,
-            cart_items: {
-              id: true,
-              product_variant: {
-                id: true,
-                product: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-          favorites: {
-            id: true,
-            product: {
-              id: true,
-              name: true,
-            },
-          },
-          reviews: {
-            id: true,
-            comment: true,
-            rating: true,
-          },
-          wallets: {
-            id: true,
-            balance: true,
-            currency: true,
+            created_at: true,
           },
         },
-
-        order: {
-          id: 'ASC',
-        },
+        order: { id: 'ASC' },
       });
-      return successRes(allUsersExceptAdmins);
+
+      const result = customers.map((u) => {
+        const orders = u.orders || [];
+
+        const orders_count = orders.length;
+
+        const total_spent = orders.reduce(
+          (sum, o) => sum + (o.total_price || 0),
+          0,
+        );
+
+        const last_order =
+          orders.length > 0
+            ? orders.sort(
+                (a, b) =>
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime(),
+              )[0].created_at
+            : null;
+
+        return {
+          id: u.id,
+          full_name: u.full_name,
+          email: u.email,
+          status: u.status,
+          role: u.role,
+          is_verified: u.is_verified,
+          created_at: u.created_at,
+          orders_count,
+          total_spent,
+          last_order,
+        };
+      });
+
+      return successRes(result);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findAllMerchantsForAdmin() {
+    try {
+      const merchants = await this.userRepo.find({
+        where: {
+          role: UsersRoles.MERCHANT,
+        },
+        relations: {
+          merchant: true,
+          orders: false,
+          reviews: false,
+        },
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+          is_verified: true,
+          status: true,
+
+          merchant: {
+            id: true,
+            store_name: true,
+            verified: true,
+          },
+        },
+        order: { id: 'ASC' },
+      });
+
+      return successRes(merchants);
     } catch (error) {
       return errorCatch(error);
     }
@@ -449,6 +446,7 @@ export class UsersService {
     try {
       const existsUser = await this.userRepo.findOne({
         where: { id },
+        relations: ['addresses'],
       });
 
       if (!existsUser) {
@@ -458,6 +456,23 @@ export class UsersService {
       if (user.role === UsersRoles.ADMIN && user.id !== existsUser.id) {
         throw new ForbiddenException(`You can't get other admin account`);
       }
+      return successRes(existsUser);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findCustomerById(id: number) {
+    try {
+      const existsUser = await this.userRepo.findOne({
+        where: { id },
+        relations: ['wallets'],
+      });
+
+      if (!existsUser) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
       return successRes(existsUser);
     } catch (error) {
       return errorCatch(error);

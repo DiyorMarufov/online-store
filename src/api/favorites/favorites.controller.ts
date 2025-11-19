@@ -22,6 +22,7 @@ import {
   ApiForbiddenResponse,
   ApiBody,
   ApiResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
@@ -153,6 +154,32 @@ export class FavoritesController {
   @ApiResponse({ status: 404, description: 'User not found.' })
   findAllByUserId(@CurrentUser() user: UsersEntity) {
     return this.favoritesService.findAllByUserId(user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/customers/:id')
+  @ApiOperation({ summary: 'Get customer favorite products' })
+  @ApiParam({ name: 'id', type: Number, description: 'Customer ID' })
+  @ApiOkResponse({
+    description: 'Customer favorites list',
+  })
+  findCustomerFavoritesById(@Param('id', ParseIntPipe) id: number) {
+    return this.favoritesService.findCustomerFavoritesById(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/merchants/:id')
+  @ApiOperation({ summary: 'Get merchant favorite products' })
+  @ApiParam({ name: 'id', type: Number, description: 'Customer ID' })
+  @ApiOkResponse({
+    description: 'Merchant favorites list',
+  })
+  findMerchantsFavoritesById(@Param('id', ParseIntPipe) id: number) {
+    return this.favoritesService.findCustomerFavoritesById(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

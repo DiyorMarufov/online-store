@@ -19,6 +19,7 @@ import {
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
   ApiResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -259,16 +260,33 @@ export class OrdersController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
-  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
-  @Get('user/orders')
-  @ApiOperation({ summary: 'Get all orders for the current user' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of orders for the current user.',
-    type: [OrdersEntity],
+  @Get('admin/customers/:id')
+  @ApiOperation({ summary: 'Get customer orders' })
+  @ApiParam({ name: 'id', type: Number, description: 'Customer ID' })
+  @ApiOkResponse({
+    description: 'Customer orders list',
   })
-  findAllByCustomerId(@CurrentUser() user: UsersEntity) {
-    return this.ordersService.findAllByCustomerId(user);
+  findCustomerOrdersById(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.findCustomerOrdersById(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/merchants/:id')
+  @ApiOperation({ summary: 'Get merchant orders' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Merchant ID',
+    required: true,
+  })
+  @ApiOkResponse({
+    description: 'List of orders belonging to the merchant',
+  })
+  findMerchantOrdersById(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.findMerchantOrdersById(id);
   }
 }

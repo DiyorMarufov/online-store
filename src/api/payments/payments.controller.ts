@@ -13,6 +13,9 @@ import {
   ApiParam,
   ApiBearerAuth,
   ApiOkResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
@@ -136,5 +139,39 @@ export class PaymentsController {
     @CurrentUser() user: UsersEntity,
   ) {
     return this.paymentsService.findOne(id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/merchants/:id')
+  @ApiOperation({ summary: 'Get merchant payments (ADMIN)' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Merchant User ID',
+    example: 12,
+  })
+  @ApiOkResponse({
+    description: 'Merchant payments list',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - missing or invalid token',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - only admin can access merchant payments',
+  })
+  @ApiNotFoundResponse({
+    description: 'Merchant payments not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'No payments found for merchant with user_id 12',
+        error: 'Not Found',
+      },
+    },
+  })
+  findMerchantPaymentsById(@Param('id', ParseIntPipe) id: number) {
+    return this.paymentsService.findMerchantPaymentsById(id);
   }
 }

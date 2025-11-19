@@ -12,6 +12,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiBearerAuth,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { UsersRoles } from 'src/common/enum';
@@ -137,6 +138,19 @@ export class CartController {
     @CurrentUser() user: UsersEntity,
   ) {
     return this.cartService.findOne(id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/customers/:id')
+  @ApiOperation({ summary: 'Get customer cart' })
+  @ApiParam({ name: 'id', type: Number, description: 'Customer ID' })
+  @ApiOkResponse({
+    description: 'Customer cart details',
+  })
+  findCustomerCartById(@Param('id', ParseIntPipe) id: number) {
+    return this.cartService.findCustomerCartById(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

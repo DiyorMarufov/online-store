@@ -96,6 +96,28 @@ export class AddressesService {
     }
   }
 
+  async findCustomerAddressesById(id: number) {
+    try {
+      const addresses = await this.addressRepo.find({
+        where: { user: { id } },
+        select: {
+          id: true,
+          region: true,
+          city: true,
+          street: true,
+          is_default: true,
+        },
+        order: {
+          is_default: 'DESC',
+        },
+      });
+
+      return successRes(addresses);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async update(
     updateAddressDto: UpdateAddressDto,
     id: number,

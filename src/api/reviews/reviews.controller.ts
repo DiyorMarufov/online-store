@@ -151,6 +151,36 @@ export class ReviewsController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/customers/:id')
+  @ApiOperation({ summary: 'Get customer reviews' })
+  @ApiParam({ name: 'id', type: Number, description: 'Customer ID' })
+  @ApiOkResponse({
+    description: 'Customer reviews list',
+  })
+  findCustomerReviewsById(@Param('id', ParseIntPipe) id: number) {
+    return this.reviewsService.findCustomerReviewsById(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/merchants/:id')
+  @ApiOperation({ summary: 'Get merchant reviews' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Merchant user ID',
+  })
+  @ApiOkResponse({
+    description: 'Merchant reviews list',
+  })
+  findMerchantReviewsById(@Param('id', ParseIntPipe) id: number) {
+    return this.reviewsService.findMerchantReviewsById(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
   @ApiBearerAuth('access-token')
   @Patch(':id')

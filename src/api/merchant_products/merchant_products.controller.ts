@@ -27,10 +27,12 @@ import {
   ApiNotFoundResponse,
   ApiUnauthorizedResponse,
   ApiResponse,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { UsersEntity } from 'src/core/entity/users.entity';
 import { UpdateMerchantProductDto } from './dto/update-merchant_product.dto';
+import { MerchantProductsEntity } from 'src/core/entity/merchant_products.entity';
 
 @ApiTags('Merchant Products')
 @Controller('merchant-products')
@@ -161,6 +163,28 @@ export class MerchantProductsController {
     @CurrentUser() user: UsersEntity,
   ) {
     return this.merchantProductsService.findOne(id, user);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/merchants/:id')
+  @ApiOperation({ summary: 'Get merchant products by merchant ID' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Merchant ID',
+    required: true,
+  })
+  @ApiOkResponse({
+    description: 'List of merchant products',
+    schema: {
+      type: 'array',
+      items: { $ref: getSchemaPath(MerchantProductsEntity) },
+    },
+  })
+  findMerchantProductsById(@Param('id', ParseIntPipe) id: number) {
+    return this.merchantProductsService.findMerchantProductsById(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)
