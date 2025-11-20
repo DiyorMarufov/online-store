@@ -170,19 +170,6 @@ export class FavoritesController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
-  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
-  @ApiBearerAuth('access-token')
-  @Get('admin/merchants/:id')
-  @ApiOperation({ summary: 'Get merchant favorite products' })
-  @ApiParam({ name: 'id', type: Number, description: 'Customer ID' })
-  @ApiOkResponse({
-    description: 'Merchant favorites list',
-  })
-  findMerchantsFavoritesById(@Param('id', ParseIntPipe) id: number) {
-    return this.favoritesService.findCustomerFavoritesById(id);
-  }
-
-  @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
   @ApiBearerAuth('access-token')
   @Delete(':id')

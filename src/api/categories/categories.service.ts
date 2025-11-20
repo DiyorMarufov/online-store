@@ -73,6 +73,20 @@ export class CategoriesService {
     }
   }
 
+  async findAllForAdmin() {
+    try {
+      const allCategories = await this.categoryRepo.find({
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+      return successRes(allCategories);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
   async update(updateCategoryDto: UpdateCategoryDto, id: number) {
     try {
       const existsCategory = await this.categoryRepo.findOne({

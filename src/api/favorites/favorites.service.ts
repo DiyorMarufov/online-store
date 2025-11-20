@@ -130,62 +130,6 @@ export class FavoritesService {
     }
   }
 
-  async findMerchantFavoritesById(id: number) {
-    try {
-      const favorites = await this.favoriteRepo.find({
-        where: {
-          product: {
-            product_variants: {
-              merchant_products: {
-                merchant: {
-                  user: { id },
-                },
-              },
-            },
-          },
-        },
-        relations: {
-          product: {
-            product_variants: {
-              merchant_products: {
-                merchant: {
-                  user: true,
-                },
-              },
-            },
-          },
-        },
-        select: {
-          id: true,
-
-          product: {
-            id: true,
-            name: true,
-            image: true,
-
-            product_variants: {
-              id: true,
-              merchant_products: {
-                id: true,
-                merchant: {
-                  id: true,
-                  user: {
-                    id: true,
-                    full_name: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      return successRes(favorites);
-    } catch (error) {
-      return errorCatch(error);
-    }
-  }
-
   async delete(id: number, user: UsersEntity) {
     try {
       const existsFavorite = await this.favoriteRepo.findOne({

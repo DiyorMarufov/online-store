@@ -383,6 +383,7 @@ export class UsersService {
           id: true,
           full_name: true,
           email: true,
+          role: true,
           is_verified: true,
           status: true,
 

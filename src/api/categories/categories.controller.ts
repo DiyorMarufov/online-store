@@ -17,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -117,6 +118,18 @@ export class CategoriesController {
   })
   findAll() {
     return this.categoriesService.findAll();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin')
+  @ApiOperation({ summary: 'Get all categories for admin' })
+  @ApiOkResponse({
+    description: 'List of categories for admin',
+  })
+  findAllForAdmin() {
+    return this.categoriesService.findAllForAdmin();
   }
 
   @UseGuards(AuthGuard, RolesGuard)

@@ -24,6 +24,7 @@ import {
   ApiConsumes,
   ApiBody,
   ApiHeader,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { checkRoles } from 'src/common/decorator/role.decorator';
 import { Status, UsersRoles } from 'src/common/enum';
@@ -168,6 +169,18 @@ export class ProductsController {
     @Query() search?: ProductSearchByCategoryDto,
   ) {
     return this.productsService.findProductsByCategoryId(categoryId, search);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get all products for admin' })
+  @ApiOkResponse({
+    description: 'List of products for admin panel',
+  })
+  @Get('admin')
+  findProductsForAdmin() {
+    return this.productsService.findProductsForAdmin();
   }
 
   @Get(':id')

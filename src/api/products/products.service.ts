@@ -53,16 +53,7 @@ export class ProductsService {
       });
       await this.productRepo.save(newProduct);
       await index.addDocuments([newProduct]);
-      return successRes(
-        {
-          name: newProduct.name,
-          description: newProduct.description,
-          image: newProduct.image,
-          is_active: newProduct.is_active,
-          category_id: newProduct.category.id,
-        },
-        201,
-      );
+      return successRes({}, 201, 'New product successfully created');
     } catch (error) {
       return errorCatch(error);
     }
@@ -119,6 +110,46 @@ export class ProductsService {
           last_page: Math.ceil(results.estimatedTotalHits / limit),
         },
       });
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findProductsForAdmin() {
+    try {
+      const products = await this.productRepo.find({
+        relations: {
+          category: {
+            parent: true,
+          },
+          product_variants: true,
+        },
+        select: {
+          id: true,
+          image: true,
+          name: true,
+          description: true,
+          is_active: true,
+          created_at: true,
+
+          category: {
+            id: true,
+            name: true,
+            parent: {
+              id: true,
+              name: true,
+            },
+          },
+
+          product_variants: {
+            id: true,
+            price: true,
+            stock: true,
+          },
+        },
+      });
+
+      return successRes(products);
     } catch (error) {
       return errorCatch(error);
     }

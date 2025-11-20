@@ -44,4 +44,7 @@ export class CreateProductDto {
   @Transform(({ value }) => value?.toLowerCase())
   @IsOptional()
   is_active?: Status = Status.ACTIVE;
+
+  @IsOptional()
+  image?: string;
 }
