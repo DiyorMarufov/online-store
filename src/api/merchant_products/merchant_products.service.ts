@@ -136,33 +136,6 @@ export class MerchantProductsService {
     }
   }
 
-  async findOne(id: number, user: UsersEntity) {
-    try {
-      const existsMerchantProduct = await this.merchantProductRepo
-        .createQueryBuilder('mp')
-        .leftJoinAndSelect('mp.merchant', 'm')
-        .leftJoin('m.user', 'u')
-        .addSelect(['u.id', 'u.full_name', 'u.email'])
-        .where('mp.id = :id', { id })
-        .getOne();
-
-      if (!existsMerchantProduct) {
-        throw new NotFoundException(`Merchant product with ID ${id} not found`);
-      }
-
-      if (
-        user.role === UsersRoles.MERCHANT &&
-        user.id !== existsMerchantProduct.merchant.user.id
-      ) {
-        throw new NotFoundException(`Can't get other's product`);
-      }
-
-      return successRes(existsMerchantProduct);
-    } catch (error) {
-      return errorCatch(error);
-    }
-  }
-
   async findMerchantProductsById(id: number) {
     try {
       const products = await this.merchantProductRepo.find({
@@ -195,6 +168,70 @@ export class MerchantProductsService {
       });
 
       return successRes(products);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findAllForAdminById(id: number) {
+    try {
+      const allMerchantProducts = await this.merchantProductRepo.find({
+        where: {
+          product_variant: {
+            product: {
+              id,
+            },
+          },
+        },
+        relations: [
+          'merchant',
+          'merchant.user',
+          'product_variant',
+          'product_variant.images',
+          'product_variant.product_variant_attributes',
+          'product_variant.product_variant_attributes.product_variant_attribute_values',
+          'product_variant.product_variant_attributes.product_variant_attribute_values.value',
+          'product_variant.product_variant_attributes.product_variant_attribute_values.value.product_attribute',
+        ],
+        select: {
+          id: true,
+          merchant: {
+            id: true,
+            store_name: true,
+            store_logo: true,
+            user: {
+              id: true,
+              full_name: true,
+              role: true,
+            },
+          },
+          price: true,
+          stock: true,
+          is_active: true,
+          product_variant: {
+            id: true,
+            product_variant_attributes: {
+              id: true,
+              product_variant_attribute_values: {
+                id: true,
+                value: {
+                  id: true,
+                  product_attribute: {
+                    id: true,
+                    name: true,
+                  },
+                  value: true,
+                },
+              },
+            },
+            images: {
+              id: true,
+              image: true,
+            },
+          },
+        },
+      });
+      return successRes(allMerchantProducts);
     } catch (error) {
       return errorCatch(error);
     }

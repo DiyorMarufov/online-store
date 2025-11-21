@@ -182,7 +182,7 @@ export class ProductVariantsService {
               },
             },
           },
-          
+
           created_at: true,
         },
       });
@@ -192,72 +192,54 @@ export class ProductVariantsService {
     }
   }
 
-  async findOne(id: number) {
+  async findAllForAdmin(id: number) {
     try {
-      const productVariant = await this.productVariantRepo
-        .createQueryBuilder('product_variant')
-        .leftJoinAndSelect('product_variant.product', 'product')
-        .leftJoinAndSelect(
-          'product_variant.product_variant_attributes',
+      const allProductVr = await this.productVariantRepo.find({
+        where: {
+          product: {
+            id,
+          },
+        },
+        relations: [
+          'product',
           'product_variant_attributes',
-        )
-        .leftJoinAndSelect(
-          'product_variant_attributes.product_attribute',
-          'product_attribute',
-        )
-        .leftJoinAndSelect(
           'product_variant_attributes.product_variant_attribute_values',
-          'product_variant_attribute_values',
-        )
-        .leftJoinAndSelect('product_variant_attribute_values.value', 'value')
-        .leftJoinAndSelect('product_variant.images', 'images')
-        .where('product_variant.id = :id', { id })
-        .select([
-          'product_variant.id',
-          'product_variant.price',
-          'product_variant.stock',
-          'product_variant.slug',
-          'product_variant.product',
-          'product.id',
-          'product.name',
-          'product.description',
-          'product.image',
-          'product.is_active',
-          'product.average_rating',
-          'product.category',
-          'product_variant_attributes.id',
-          'product_attribute.id',
-          'product_attribute.name',
-          'product_variant_attribute_values.id',
-          'value.id',
-          'value.value',
-          'images.id',
-          'images.image',
-        ])
-        .getOne();
-
-      if (!productVariant) {
-        throw new NotFoundException(`Product variant with ID ${id} not found`);
-      }
-
-      const formatted = {
-        ...productVariant,
-        product_variant_attributes:
-          productVariant.product_variant_attributes.map((attr) => ({
-            id: attr.id,
-            product_attribute: {
-              id: attr.product_attribute.id,
-              name: attr.product_attribute.name,
-              type: attr.product_attribute.type,
-              product_attribute_values:
-                attr.product_variant_attribute_values.map((v) => ({
-                  value: v.value,
-                })),
+          'product_variant_attributes.product_variant_attribute_values.value',
+          'product_variant_attributes.product_variant_attribute_values.value.product_attribute',
+        ],
+        select: {
+          id: true,
+          product: {
+            id: true,
+            category: {
+              id: true,
+              name: true,
             },
-          })),
-      };
-
-      return successRes(formatted);
+            name: true,
+          },
+          price: true,
+          stock: true,
+          product_variant_attributes: {
+            id: true,
+            product_variant_attribute_values: {
+              id: true,
+              value: {
+                id: true,
+                product_attribute: {
+                  id: true,
+                  name: true,
+                },
+                value: true,
+              },
+            },
+          },
+          images: {
+            id: true,
+            image: true,
+          },
+        },
+      });
+      return successRes(allProductVr);
     } catch (error) {
       return errorCatch(error);
     }

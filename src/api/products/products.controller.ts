@@ -183,7 +183,7 @@ export class ProductsController {
     return this.productsService.findProductsForAdmin();
   }
 
-  @Get(':id')
+  @Get('admin/:id')
   @ApiOperation({ summary: 'Get product details by ID' })
   @ApiParam({
     name: 'id',
@@ -200,7 +200,7 @@ export class ProductsController {
     description: 'Product not found',
   })
   findProductById(@Param('id', ParseIntPipe) id: number) {
-    return this.productsService.findProductById(id);
+    return this.productsService.findAdminProductById(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

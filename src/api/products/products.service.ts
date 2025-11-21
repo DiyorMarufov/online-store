@@ -239,18 +239,25 @@ export class ProductsService {
     }
   }
 
-  async findProductById(id: number) {
+  async findAdminProductById(id: number) {
     try {
       const product = await this.productRepo.findOne({
         where: { id },
-        relations: [
-          'category',
-          'product_variants',
-          'product_variants.product_variant_attributes',
-          'product_variants.product_variant_attributes.product_attribute',
-          'product_variants.product_variant_attributes.product_values',
-          'reviews',
-        ],
+        relations: ['category', 'product_variants'],
+        select: {
+          id: true,
+          name: true,
+          category: {
+            id: true,
+            name: true,
+          },
+          average_rating: true,
+          product_variants: {
+            id: true,
+            price: true,
+          },
+          is_active: true,
+        },
       });
 
       if (!product) {

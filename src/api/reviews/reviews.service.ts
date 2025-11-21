@@ -149,17 +149,28 @@ export class ReviewsService {
     }
   }
 
-  async findOne(id: number) {
+  async findAllForAdminById(id: number) {
     try {
-      const existsReview = await this.reviewRepo.findOne({
-        where: { id },
+      const allReviews = await this.reviewRepo.find({
+        where: {
+          product: {
+            id,
+          },
+        },
+        relations: ['customer'],
+        select: {
+          id: true,
+          customer: {
+            id: true,
+            full_name: true,
+          },
+          rating: true,
+          comment: true,
+          created_at: true,
+          updated_at: true,
+        },
       });
-
-      if (!existsReview) {
-        throw new NotFoundException(`Review with ID ${id} not found`);
-      }
-
-      return successRes(existsReview);
+      return successRes(allReviews);
     } catch (error) {
       return errorCatch(error);
     }

@@ -138,16 +138,15 @@ export class ReviewsController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
-  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.CUSTOMER)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
-  @Get(':id')
-  @ApiOperation({ summary: 'Get review by ID' })
-  @ApiParam({ name: 'id', type: Number, description: 'Review ID' })
-  @ApiResponse({ status: 200, description: 'Successfully fetched review.' })
-  @ApiResponse({ status: 404, description: 'Review not found.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.reviewsService.findOne(id);
+  @Get('admin/:id')
+  @ApiOperation({ summary: 'Get all reviews for admin by product id' })
+  @ApiOkResponse({
+    description: 'List of reviews for the product',
+  })
+  findAllForAdminById(@Param('id', ParseIntPipe) id: number) {
+    return this.reviewsService.findAllForAdminById(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

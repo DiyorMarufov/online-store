@@ -151,21 +151,6 @@ export class MerchantProductsController {
   }
 
   @UseGuards(AuthGuard, RolesGuard)
-  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN, UsersRoles.MERCHANT)
-  @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get merchant product by ID' })
-  @ApiParam({ name: 'id', type: Number, description: 'Merchant product ID' })
-  @ApiOkResponse({ description: 'Merchant product found successfully' })
-  @ApiNotFoundResponse({ description: 'Merchant product not found' })
-  @Get(':id')
-  findOne(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: UsersEntity,
-  ) {
-    return this.merchantProductsService.findOne(id, user);
-  }
-
-  @UseGuards(AuthGuard, RolesGuard)
   @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
   @ApiBearerAuth('access-token')
   @Get('admin/merchants/:id')
@@ -185,6 +170,17 @@ export class MerchantProductsController {
   })
   findMerchantProductsById(@Param('id', ParseIntPipe) id: number) {
     return this.merchantProductsService.findMerchantProductsById(id);
+  }
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get merchant product detail for admin' })
+  @ApiOkResponse({
+    description: 'Merchant product detail',
+  })
+  @Get('admin/:id')
+  findAllForAdminById(@Param('id', ParseIntPipe) id: number) {
+    return this.merchantProductsService.findAllForAdminById(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)
