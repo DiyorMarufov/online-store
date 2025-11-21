@@ -19,6 +19,7 @@ import {
   ApiParam,
   ApiConsumes,
   ApiBody,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { ProductVariantsService } from './product_variants.service';
 import { CreateProductVariantDto } from './dto/create-product_variant.dto';
@@ -152,6 +153,18 @@ export class ProductVariantsController {
   })
   findAllForMerchants() {
     return this.productVariantsService.findAllForMerchants();
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin/:id')
+  @ApiOperation({ summary: 'Get all product variants for admin by product ID' })
+  @ApiOkResponse({
+    description: 'List of product variants',
+  })
+  findAllForAdmin(@Param('id', ParseIntPipe) id: number) {
+    return this.productVariantsService.findAllForAdmin(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)
