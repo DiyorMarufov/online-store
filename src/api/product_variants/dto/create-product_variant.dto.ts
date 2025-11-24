@@ -32,4 +32,7 @@ export class CreateProductVariantDto {
   @Type(() => Number)
   @IsNotEmpty()
   stock: number;
+
+  @IsOptional()
+  imagea?: string[];
 }

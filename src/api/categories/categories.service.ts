@@ -58,14 +58,20 @@ export class CategoriesService {
     }
   }
 
-  async findAll() {
+  async findAllForAdmin() {
     try {
-      const categories = await this.categoryRepo
-        .createQueryBuilder('category')
-        .innerJoinAndSelect('category.children', 'children')
-        .innerJoinAndSelect('children.products', 'products')
-        .leftJoinAndSelect('category.parent', 'parent')
-        .getMany();
+      const categories = await this.categoryRepo.find({
+        relations: ['parent'],
+        select: {
+          id: true,
+          name: true,
+          parent: {
+            id: true,
+            name: true,
+          },
+          created_at: true,
+        },
+      });
 
       return successRes(categories);
     } catch (error) {
@@ -73,7 +79,7 @@ export class CategoriesService {
     }
   }
 
-  async findAllForAdmin() {
+  async findAllForAdminForProductsAdd() {
     try {
       const allCategories = await this.categoryRepo.find({
         select: {

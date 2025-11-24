@@ -99,25 +99,17 @@ export class CategoriesController {
     return this.categoriesService.create(createCategoryDto);
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
   @Get()
-  @ApiOperation({ summary: 'Get all categories (Public)' })
+  @ApiOperation({ summary: 'Get all categories (Admin)' })
   @ApiResponse({
     status: 200,
     description: 'Returns the list of all categories',
-    schema: {
-      example: {
-        success: true,
-        statusCode: 200,
-        data: [
-          { id: 1, name: 'Electronics' },
-          { id: 2, name: 'Clothing' },
-          { id: 3, name: 'Books' },
-        ],
-      },
-    },
   })
   findAll() {
-    return this.categoriesService.findAll();
+    return this.categoriesService.findAllForAdmin();
   }
 
   @UseGuards(AuthGuard, RolesGuard)
@@ -128,8 +120,8 @@ export class CategoriesController {
   @ApiOkResponse({
     description: 'List of categories for admin',
   })
-  findAllForAdmin() {
-    return this.categoriesService.findAllForAdmin();
+  findAllForAdminForProductsAdd() {
+    return this.categoriesService.findAllForAdminForProductsAdd();
   }
 
   @UseGuards(AuthGuard, RolesGuard)
