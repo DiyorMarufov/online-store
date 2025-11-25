@@ -49,6 +49,15 @@ export class ProductAttributesService {
     try {
       const allProductAttributes = await this.productAttribute.find({
         relations: ['product_attribute_values'],
+        select: {
+          id: true,
+          name: true,
+          created_at: true,
+          product_attribute_values: {
+            id: true,
+            value: true,
+          },
+        },
       });
       return successRes(allProductAttributes);
     } catch (error) {

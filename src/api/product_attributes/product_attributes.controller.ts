@@ -47,11 +47,22 @@ export class ProductAttributesController {
     return this.productAttributesService.create(createProductAttributeDto);
   }
 
-  @Get()
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get('admin')
   @ApiOperation({ summary: 'Get all product attributes' })
   @ApiResponse({
     status: 200,
-    description: 'List of product attributes returned successfully.',
+    description: 'List of product attributes retrieved successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized – invalid or missing token.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden – insufficient permissions.',
   })
   findAll() {
     return this.productAttributesService.findAll();
