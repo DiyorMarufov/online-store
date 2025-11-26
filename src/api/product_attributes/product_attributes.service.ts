@@ -52,6 +52,7 @@ export class ProductAttributesService {
         select: {
           id: true,
           name: true,
+          type: true,
           created_at: true,
           product_attribute_values: {
             id: true,

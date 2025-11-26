@@ -50,7 +50,18 @@ export class ProductAttributeValuesService {
   async findAll() {
     try {
       const allProductAttributeValues =
-        await this.productAttributeValueRepo.find();
+        await this.productAttributeValueRepo.find({
+          relations: ['product_attribute'],
+          select:{
+            id: true,
+            product_attribute:{
+              id: true,
+              name: true
+            },
+            value: true,
+            created_at: true
+          }
+        });
 
       return successRes(allProductAttributeValues);
     } catch (error) {
@@ -122,7 +133,7 @@ export class ProductAttributeValuesService {
       }
 
       await this.productAttributeValueRepo.delete(id);
-      return successRes()
+      return successRes();
     } catch (error) {
       return errorCatch(error);
     }
