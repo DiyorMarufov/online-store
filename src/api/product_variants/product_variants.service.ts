@@ -141,12 +141,27 @@ export class ProductVariantsService {
 
   async findAll() {
     try {
-      const allProductVariants = await this.productVariantRepo
-        .createQueryBuilder('pv')
-        .leftJoinAndSelect('pv.product', 'products')
-        .leftJoinAndSelect('pv.images', 'images')
-        .orderBy('pv.id', 'ASC')
-        .getMany();
+      const allProductVariants = await this.productVariantRepo.find({
+        relations: ['images', 'merchant_products', 'product'],
+        select: {
+          id: true,
+          product: {
+            id: true,
+            name: true,
+          },
+          images: {
+            id: true,
+            image: true,
+          },
+          merchant_products: {
+            id: true,
+          },
+          price: true,
+          stock: true,
+          slug: true,
+          created_at: true,
+        },
+      });
       return successRes(allProductVariants);
     } catch (error) {
       return errorCatch(error);
