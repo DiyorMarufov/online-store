@@ -58,6 +58,7 @@ export class ProductVariantsService {
       const newVariant = this.productVariantRepo.create({
         ...createProductVariantDto,
         product: existsProduct,
+        
       });
       await this.productVariantRepo.save(newVariant);
 

@@ -34,5 +34,5 @@ export class CreateProductVariantDto {
   stock: number;
 
   @IsOptional()
-  imagea?: string[];
+  images?: any[];
 }
