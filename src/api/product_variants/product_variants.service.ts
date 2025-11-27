@@ -58,7 +58,6 @@ export class ProductVariantsService {
       const newVariant = this.productVariantRepo.create({
         ...createProductVariantDto,
         product: existsProduct,
-        
       });
       await this.productVariantRepo.save(newVariant);
 
@@ -256,6 +255,78 @@ export class ProductVariantsService {
         },
       });
       return successRes(allProductVr);
+    } catch (error) {
+      return errorCatch(error);
+    }
+  }
+
+  async findOneByIdForAdmin(id: number) {
+    try {
+      const existsProduct = await this.productVariantRepo.findOne({
+        where: { id },
+        relations: [
+          'product',
+          'product.category',
+          'merchant_products',
+          'merchant_products.merchant',
+          'merchant_products.merchant.user',
+          'product_variant_attributes',
+          'product_variant_attributes.product_variant_attribute_values',
+          'product_variant_attributes.product_variant_attribute_values.value',
+          'product_variant_attributes.product_variant_attribute_values.value.product_attribute',
+        ],
+        select: {
+          id: true,
+          price: true,
+          slug: true,
+          stock: true,
+          product: {
+            id: true,
+            name: true,
+            category: {
+              id: true,
+              name: true,
+            },
+            is_active: true,
+            average_rating: true,
+          },
+          merchant_products: {
+            id: true,
+            merchant: {
+              id: true,
+              store_name: true,
+              user: {
+                id: true,
+                full_name: true,
+                role: true,
+              },
+            },
+          },
+          images: {
+            id: true,
+            image: true,
+          },
+          product_variant_attributes: {
+            id: true,
+            product_variant_attribute_values: {
+              id: true,
+              value: {
+                id: true,
+                product_attribute: {
+                  id: true,
+                  name: true,
+                },
+                value: true,
+              },
+            },
+          },
+        },
+      });
+
+      if (!existsProduct)
+        throw new NotFoundException(`Product variant with ID ${id} not found`);
+
+      return successRes(existsProduct);
     } catch (error) {
       return errorCatch(error);
     }

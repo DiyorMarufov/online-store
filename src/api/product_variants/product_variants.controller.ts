@@ -20,6 +20,9 @@ import {
   ApiConsumes,
   ApiBody,
   ApiOkResponse,
+  ApiNotFoundResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { ProductVariantsService } from './product_variants.service';
 import { CreateProductVariantDto } from './dto/create-product_variant.dto';
@@ -165,6 +168,44 @@ export class ProductVariantsController {
   })
   findAllForAdmin(@Param('id', ParseIntPipe) id: number) {
     return this.productVariantsService.findAllForAdmin(id);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @checkRoles(UsersRoles.SUPERADMIN, UsersRoles.ADMIN)
+  @ApiBearerAuth('access-token')
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Get product variant detail (Admin only)',
+    description:
+      'Returns full details of a product variant, including product info, attributes, images, and merchant pricing. Accessible only by ADMIN or SUPERADMIN.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Product variant ID',
+    example: 42,
+  })
+  @ApiOkResponse({
+    description: 'Product variant successfully retrieved',
+  })
+  @ApiNotFoundResponse({
+    description: 'Product variant not found',
+    schema: {
+      example: {
+        success: false,
+        message: 'Product variant with ID 42 not found',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Missing or invalid token',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Forbidden - Only ADMIN or SUPERADMIN can access this endpoint',
+  })
+  findOneByIdForAdmin(@Param('id', ParseIntPipe) id: number) {
+    return this.productVariantsService.findOneByIdForAdmin(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)
