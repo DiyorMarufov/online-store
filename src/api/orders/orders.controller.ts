@@ -154,8 +154,8 @@ export class OrdersController {
       },
     },
   })
-  findAll() {
-    return this.ordersService.findAll();
+  findAllForAdmin() {
+    return this.ordersService.findAllForAdmin();
   }
 
   @UseGuards(AuthGuard, RolesGuard)
@@ -256,7 +256,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.ordersService.findOne(id);
+    return this.ordersService.findOneForAdmin(id);
   }
 
   @UseGuards(AuthGuard, RolesGuard)

@@ -18,20 +18,28 @@ export class PaymentsService {
   ) {}
   async findAll() {
     try {
-      const allPayments = await this.paymentRepo
-        .createQueryBuilder('payment')
-        .leftJoin('payment.order', 'order')
-        .leftJoin('order.customer', 'customer')
-        .leftJoin('customer.wallets', 'wallet')
-        .select([
-          'payment.id',
-          'payment.created_at',
-          'payment.amount',
-          'order.status',
-          'customer.full_name',
-          'wallet.balance',
-        ])
-        .getMany();
+      const allPayments = await this.paymentRepo.find({
+        relations: ['order', 'order.customer'],
+        select: {
+          id: true,
+          amount: true,
+          method: true,
+          status: true,
+          transaction_id: true,
+          created_at: true,
+
+          order: {
+            id: true,
+            total_price: true,
+            status: true,
+
+            customer: {
+              id: true,
+              full_name: true,
+            },
+          },
+        },
+      });
 
       return successRes(allPayments);
     } catch (error) {
@@ -71,13 +79,109 @@ export class PaymentsService {
 
   async findOne(id: number, user: UsersEntity) {
     try {
-      const payment = await this.paymentRepo
-        .createQueryBuilder('payment')
-        .leftJoinAndSelect('payment.order', 'order')
-        .leftJoin('order.customer', 'customer')
-        .addSelect(['customer.id', 'customer.full_name', 'customer.email'])
-        .where('payment.id = :id', { id })
-        .getOne();
+      const payment = await this.paymentRepo.findOne({
+        where: { id }, // Shart qo'shildi
+        relations: [
+          // 1. Asosiy bog'lanishlar
+          'order',
+          'order.customer', // Ruxsatni tekshirish uchun kerak
+          'order.address',
+
+          // 2. Order Items va Product Variant zanjiri (Batafsil ma'lumotlar uchun)
+          'order.order_items',
+          'order.order_items.product_variant',
+          'order.order_items.product_variant.images',
+          'order.order_items.product_variant.product',
+
+          // 3. Variant Atributlari zanjiri
+          'order.order_items.product_variant.product_variant_attributes',
+          'order.order_items.product_variant.product_variant_attributes.product_variant_attribute_values',
+          'order.order_items.product_variant.product_variant_attributes.product_variant_attribute_values.value',
+          'order.order_items.product_variant.product_variant_attributes.product_variant_attribute_values.value.product_attribute',
+
+          // 4. Merchant ma'lumotlari zanjiri
+          'order.order_items.product_variant.merchant_products',
+          'order.order_items.product_variant.merchant_products.merchant',
+          'order.order_items.product_variant.merchant_products.merchant.user',
+        ],
+
+        select: {
+          // PaymentEntity ning bevosita maydonlari
+          id: true,
+          amount: true,
+          method: true,
+          status: true,
+          transaction_id: true,
+          created_at: true,
+
+          // OrderEntity va unga bog'langan ma'lumotlar (Payment orqali)
+          order: {
+            id: true,
+            total_price: true,
+            status: true,
+
+            // Customer - ruxsatni tekshirish uchun zarur
+            customer: {
+              id: true,
+              full_name: true,
+            },
+
+            // Manzil ma'lumotlari
+            address: {
+              id: true,
+              city: true,
+              region: true,
+              street: true,
+            },
+
+            // Order Items va uning barcha chuqur ma'lumotlari
+            order_items: {
+              id: true,
+              price: true,
+              quantity: true,
+              created_at: true,
+              product_variant: {
+                id: true,
+                stock: true,
+                images: {
+                  id: true,
+                  image: true,
+                },
+                product: {
+                  id: true,
+                  name: true,
+                },
+                product_variant_attributes: {
+                  id: true,
+                  product_variant_attribute_values: {
+                    id: true,
+                    value: {
+                      id: true,
+                      value: true,
+                      product_attribute: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
+                merchant_products: {
+                  id: true,
+                  merchant: {
+                    id: true,
+                    store_name: true,
+                    verified: true,
+                    user: {
+                      id: true,
+                      full_name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
 
       if (!payment) {
         throw new NotFoundException(`Payment with ID ${id} not found`);
@@ -89,6 +193,7 @@ export class PaymentsService {
       ) {
         throw new ForbiddenException(`You can't access to other's payment`);
       }
+
       return successRes(payment);
     } catch (error) {
       return errorCatch(error);

@@ -223,20 +223,21 @@ export class OrdersService {
     }
   }
 
-  async findAll() {
+  async findAllForAdmin() {
     try {
-      const allOrders = await this.orderRepo
-        .createQueryBuilder('order')
-        .leftJoinAndSelect('order.customer', 'customer')
-        .select([
-          'order.id',
-          'order.total_price',
-          'order.status',
-          'order.created_at',
-          'customer.id',
-          'customer.full_name',
-        ])
-        .getMany();
+      const allOrders = await this.orderRepo.find({
+        relations: ['customer'],
+        select: {
+          id: true,
+          customer: {
+            id: true,
+            full_name: true,
+          },
+          total_price: true,
+          status: true,
+          created_at: true,
+        },
+      });
 
       return successRes(allOrders);
     } catch (error) {
@@ -387,10 +388,96 @@ export class OrdersService {
     }
   }
 
-  async findOne(id: number) {
+  async findOneForAdmin(id: number) {
     try {
       const existsOrder = await this.orderRepo.findOne({
         where: { id },
+        relations: [
+          'customer',
+          'address',
+          'payment',
+
+          'order_items.product_variant',
+          'order_items.product_variant.images',
+          'order_items.product_variant.product',
+
+          'order_items.product_variant.product_variant_attributes',
+          'order_items.product_variant.product_variant_attributes.product_variant_attribute_values',
+          'order_items.product_variant.product_variant_attributes.product_variant_attribute_values.value',
+          'order_items.product_variant.product_variant_attributes.product_variant_attribute_values.value.product_attribute',
+
+          'order_items.product_variant.merchant_products',
+          'order_items.product_variant.merchant_products.merchant',
+          'order_items.product_variant.merchant_products.merchant.user',
+        ],
+        select: {
+          id: true,
+          status: true,
+          total_price: true,
+          created_at: true,
+          customer: {
+            id: true,
+            full_name: true,
+          },
+          address: {
+            id: true,
+            city: true,
+            region: true,
+            street: true,
+          },
+          payment: {
+            id: true,
+            amount: true,
+            method: true,
+            status: true,
+            transaction_id: true,
+            created_at: true,
+          },
+          order_items: {
+            id: true,
+            price: true,
+            quantity: true,
+            created_at: true,
+            product_variant: {
+              id: true,
+              stock: true,
+              images: {
+                id: true,
+                image: true,
+              },
+              product: {
+                id: true,
+                name: true,
+              },
+              product_variant_attributes: {
+                id: true,
+                product_variant_attribute_values: {
+                  id: true,
+                  value: {
+                    id: true,
+                    value: true,
+                    product_attribute: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+              merchant_products: {
+                id: true,
+                merchant: {
+                  id: true,
+                  store_name: true,
+                  verified: true,
+                  user: {
+                    id: true,
+                    full_name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!existsOrder) {
